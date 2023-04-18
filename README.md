@@ -33,6 +33,43 @@ scanResult = nucleiScanner.scan("example.com", template=["cves","network", "ssl"
 print(scanResult)
 ```
 
+### Templates
+```python
+from PyNuclei import Nuclei
+
+nucleiScanner = Nuclei()
+
+"""
+All active templates.
+"""
+print(nucleiScanner.nucleiTemplates)
+[
+    "cnvd", "cves", "default-logins", "exposed-panels",
+    "exposures", "file", "misconfiguration",
+    "miscellaneous", "takeovers", "technologies",
+    "token-spray", "vulnerabilities", "network", 
+    "dns", "iot", "ssl"
+]
+
+"""
+All ignored templates.
+"""
+print(nucleiScanner.ignoredTemplates)
+[
+    "headless", "fuzzing", "helpers", 
+]
+```
+NOTE: You can run ignored templates by passing them in the template parameter in ```nucleiScanner.scan(<host>, template=nucleiScanner.ignoredTemplates)```
+
+### Update Nuclei
+```python
+from PyNuclei import Nuclei
+"""
+This will update Nuclei engine & Nuclei Templates.
+"""
+Nuclei.updateNuclei(verbose=True)
+```
+
 ## Connect with me
 <p align="left">
 <a href="https://twitter.com/kushvaibhav_" target="blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/twitter.svg" alt="kushvaibhav_" height="30" width="40" /></a>

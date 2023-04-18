@@ -103,9 +103,7 @@ class Nuclei:
 		for template in templates:
 			try:
 				with open(f"{self.outputPath}{host}{template}", "r") as scanResult:
-					for result in scanResult.readlines():
-						result = json.loads(result)
-						report.append(result)
+					report.extend(json.load(scanResult))
 			except Exception as e:
 				print(f"Exception while reading Nuclei Scan Result: {e}")
 
@@ -152,7 +150,7 @@ class Nuclei:
 					if vuln["info"]["reference"]:
 						if type(vuln["info"]["reference"]) is str:
 							data["reference"] = vuln["info"]["reference"]
-						else:
+						elif type(vuln["info"]["reference"]) is list:
 							data["reference"] =  ", ".join(vuln["info"]["reference"])
 				
 				if "remediation" in vuln["info"]:
@@ -176,8 +174,9 @@ class Nuclei:
 						else:
 							cwe = vuln["info"]["classification"]["cwe-id"]
 
-						if "cwe-" in cwe.lower():
-							data["cwe-id"] = int(cwe.split("-")[-1])
+						if cwe is not None:
+							if "cwe-" in cwe.lower():
+								data["cwe-id"] = int(cwe.split("-")[-1])
 					
 				if "extracted-results" in vuln:
 					data["result"] = vuln["extracted-results"]
@@ -223,7 +222,7 @@ class Nuclei:
 			command = [
 				'nuclei', '-header', f"'User-Agent: {userAgent}'", 
 				"-rl", str(rateLimit), "-u", host, "-t", f"{template}/", 
-				"-json", "-o", f"{self.outputPath}{fileNameValidHost}{template}", 
+				"--json-export", f"{self.outputPath}{fileNameValidHost}{template}", 
 				"-disable-update-check"
 			]
 			allScans.append(subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
