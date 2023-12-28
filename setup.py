@@ -17,7 +17,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "PyNuclei"},
-    packages=setuptools.find_packages(where="PyNuclei"),
+    # package_dir={"": "PyNuclei"},
+    # packages=setuptools.find_packages(where="PyNuclei"),
     python_requires=">=3.4",
 )
+
