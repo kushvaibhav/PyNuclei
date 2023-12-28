@@ -29,7 +29,7 @@ Returns:
 """
 
 nucleiScanner = Nuclei()
-scanResult = nucleiScanner.scan("example.com", template=["cves","network", "ssl"], rateLimit=150)
+scanResult = nucleiScanner.scan("example.com", templates=["cves","network", "ssl"], rateLimit=150)
 print(scanResult)
 ```
 
