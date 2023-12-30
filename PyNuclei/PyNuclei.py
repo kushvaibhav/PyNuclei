@@ -5,10 +5,19 @@ import subprocess
 import os
 import shutil
 import tempfile
-
+from threading import Thread
 from .ScanUtils.UserAgents import USER_AGENTS
 
 FILE_SEPARATOR = "#SEP#"
+
+
+def scanningThread(host, command, verbose):
+	process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	output, error = process.communicate()
+	if verbose:
+		print(f"[Stdout] [{host}] {output.decode('utf-8', 'ignore')}")
+		print(f"[Stderr] [{host}] {error.decode('utf-8', 'ignore')}")
+
 
 class NucleiNotFound(Exception):
 	pass
@@ -200,7 +209,7 @@ class Nuclei:
 		return formattedReport
 
 
-	def scan(self, host, templates=[], userAgent="", rateLimit=150, verbose=False):
+	def scan(self, host, templates=[], userAgent="", rateLimit=150, verbose=False, metrics=False):
 		"""
 		Runs the nuclei scan and returns a formatted dictionary with the results.
 		Args:
@@ -215,11 +224,12 @@ class Nuclei:
 
 		fileNameValidHost = f"{host.replace('/', FILE_SEPARATOR)}/"
 		self.createResultDir(fileNameValidHost)
-		allScans = []
 
 		if not templates:
 			templates = self.nucleiTemplates
 
+		commands = []
+		metrics_port = 9092
 		for template in templates:
 			if not userAgent:
 				userAgent = random.choice(USER_AGENTS)
@@ -230,13 +240,20 @@ class Nuclei:
 				"--json-export", f"{self.outputPath}{fileNameValidHost}{template}", 
 				"-disable-update-check"
 			]
-			allScans.append(subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+			if metrics:
+				command.append("-stats", "-metrics-port", str(metrics_port))
+				metrics_port += 1
 
-		for process in allScans:
-			output, error = process.communicate()
-			if verbose:
-				print(f"[Stdout] [{host}] {output.decode('utf-8', 'ignore')}")
-				print(f"[Stderr] [{host}] {error.decode('utf-8', 'ignore')}")
+			commands.append(command)
+
+		threads = []
+		for command in commands:
+			t = Thread(target=scanningThread, args=[host, command, verbose])
+			threads.append(t)
+			t.start()
+
+		for thread in threads:
+			thread.join()
 
 		report = self._parseNucleiScan(fileNameValidHost, templates)
 
