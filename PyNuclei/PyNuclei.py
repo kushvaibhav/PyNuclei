@@ -110,7 +110,7 @@ class Nuclei:
 
 		return report
 
-	
+
 	def _formatNucleiReport(self, report):
 		"""
 		Reformats the raw Nuclei scan results from file into a cleaner list.
@@ -153,7 +153,7 @@ class Nuclei:
 							data["reference"] = vuln["info"]["reference"]
 						elif isinstance(vuln["info"]["reference"], list):
 							data["reference"] =  ", ".join(vuln["info"]["reference"])
-				
+
 				if "remediation" in vuln["info"]:
 					data["solution"] = vuln["info"]["remediation"]
 
@@ -164,10 +164,10 @@ class Nuclei:
 
 					if "cvss-score" in vuln["info"]["classification"]:
 						data["cvss-score"] = vuln["info"]["classification"]["cvss-score"]
-					
+
 					if "cve-id" in vuln["info"]["classification"]:
 						data["cve-id"] = vuln["info"]["classification"]["cve-id"]
-					
+
 					if "cwe-id" in vuln["info"]["classification"]:
 						cwe = 0
 						if isinstance(vuln["info"]["classification"]["cwe-id"], list) and vuln["info"]["classification"]["cwe-id"]:
@@ -178,7 +178,7 @@ class Nuclei:
 						if cwe is not None:
 							if "cwe-" in cwe.lower():
 								data["cwe-id"] = int(cwe.split("-")[-1])
-					
+
 				if "extracted-results" in vuln:
 					data["result"] = vuln["extracted-results"]
 
@@ -187,15 +187,15 @@ class Nuclei:
 
 				if "matcher-name" in vuln:
 					data["vulnerabilityDetail"] = vuln["matcher-name"]
-							
+
 				formattedReport.append(data)
 			except Exception as e:
 				print(f"Error in parsing Nuclei result: {e} | Data: {vuln}")
 				continue
-		
+
 		return formattedReport
 
-	
+
 	def scan(self, host, templates=[], userAgent="", rateLimit=150, verbose=False):
 		"""
 		Runs the nuclei scan and returns a formatted dictionary with the results.
