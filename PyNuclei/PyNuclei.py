@@ -129,7 +129,7 @@ class Nuclei:
 					"vulnerabilityDetail": str(),
 					"description": str(),
 					"type": vuln["type"],
-					"result": list(),
+					"result": [],
 					"vulnerableAt": vuln["matched-at"],
 					"solution": str(),
 					"curl": str(),
