@@ -170,7 +170,7 @@ class Nuclei:
 					
 					if "cwe-id" in vuln["info"]["classification"]:
 						cwe = 0
-						if type(vuln["info"]["classification"]["cwe-id"]) is list and vuln["info"]["classification"]["cwe-id"]:
+						if isinstance(vuln["info"]["classification"]["cwe-id"], list) and vuln["info"]["classification"]["cwe-id"]:
 							cwe = vuln["info"]["classification"]["cwe-id"][0]
 						else:
 							cwe = vuln["info"]["classification"]["cwe-id"]
@@ -211,7 +211,7 @@ class Nuclei:
 
 		fileNameValidHost = f"{host.replace('/', FILE_SEPERATOR)}/"
 		self.createResultDir(fileNameValidHost)
-		allScans = list()
+		allScans = []
 
 		if not templates:
 			templates = self.nucleiTemplates
