@@ -37,7 +37,7 @@ class Nuclei:
 
 	@staticmethod
 	def checkFirstRun():
-		with open(f"{os.path.dirname(__file__)}/.config", "r+") as pyNucleiConfig:
+		with open(f"{os.path.dirname(__file__)}/.config", "r+", encoding="latin1") as pyNucleiConfig:
 			configDetails = json.loads(pyNucleiConfig.read())
 			if configDetails["FIRST_RUN"]:
 				print("Configuring PyNuclei for First Run...")
@@ -62,7 +62,7 @@ class Nuclei:
 			["nuclei", "-update-templates"],
 			["nuclei", "-update"]
 		]
-		
+
 		for command in commands:
 			processes.append(subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
 
@@ -103,7 +103,7 @@ class Nuclei:
 
 		for template in templates:
 			try:
-				with open(f"{self.outputPath}{host}{template}", "r") as scanResult:
+				with open(f"{self.outputPath}{host}{template}", "r", encoding="latin1") as scanResult:
 					report.extend(json.load(scanResult))
 			except Exception as e:
 				print(f"Exception while reading Nuclei Scan Result: {e}")
@@ -119,7 +119,7 @@ class Nuclei:
 		Returns:
 			list: The list of formatted report
 		"""
-		formattedReport = list()
+		formattedReport = []
 		for vuln in report:
 			try:
 				data = {
@@ -149,9 +149,9 @@ class Nuclei:
 
 				if "reference" in vuln["info"]:
 					if vuln["info"]["reference"]:
-						if type(vuln["info"]["reference"]) is str:
+						if isinstance(vuln["info"]["reference"], str):
 							data["reference"] = vuln["info"]["reference"]
-						elif type(vuln["info"]["reference"]) is list:
+						elif isinstance(vuln["info"]["reference"], list):
 							data["reference"] =  ", ".join(vuln["info"]["reference"])
 				
 				if "remediation" in vuln["info"]:
