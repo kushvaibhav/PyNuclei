@@ -57,7 +57,11 @@ class Nuclei:
 		Checks for any updates to Nuclei or Nuclei Templates,
 		and installs them if any.
 		"""
-		processes = list()
+
+		# Make sure Nuclei is installed
+		Nuclei.isNucleiInstalled()
+
+		processes = []
 		commands = [
 			["nuclei", "-update-templates"],
 			["nuclei", "-update"]
@@ -99,7 +103,7 @@ class Nuclei:
 
 
 	def _parseNucleiScan(self, host, templates):
-		report = list()
+		report = []
 
 		for template in templates:
 			try:
