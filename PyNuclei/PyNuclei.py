@@ -6,12 +6,57 @@ import os
 import shutil
 import tempfile
 from threading import Thread
+import json
+import time
+import requests
+
 from .ScanUtils.UserAgents import USER_AGENTS
 
 FILE_SEPARATOR = "#SEP#"
 
+RUNNING = 0
+DONE = 0
+CURRENT_PROGESS = 0
+MAX_PROGRESS = 0
+
+def metricsThread(max_metrics_port):
+	"""Connect to the /metrics backend and make stats from it"""
+	global RUNNING, CURRENT_PROGESS, MAX_PROGRESS, DONE
+
+	while True:
+		CURRENT_PROGESS = 0
+		MAX_PROGRESS = 0
+		RUNNING = 0
+		DONE = 0
+
+		for port in range(9092, max_metrics_port):
+			try:
+				response = requests.get(f"http://127.0.0.1:{port}/metrics", timeout=1)
+			except requests.ConnectionError as _:
+				DONE += 1
+				continue
+
+			json_object = {}
+
+			# If the port is closed, then the process is done
+			# If there is a malformed JSON, we don't really know
+			try:
+				json_object = response.json()
+				RUNNING += 1
+			except Exception as _:
+				DONE += 1
+				continue
+			
+			CURRENT_PROGESS += json_object['requests']
+			MAX_PROGRESS += json_object["total"]
+
+		print(f"{RUNNING=} {DONE=} {CURRENT_PROGESS}/{MAX_PROGRESS}")
+		time.sleep(1) # Sleep for 1sec
+
+
 
 def scanningThread(host, command, verbose):
+	"""Launch the nuclei process and output the outcome if 'verbose'"""
 	process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	output, error = process.communicate()
 	if verbose:
@@ -241,7 +286,9 @@ class Nuclei:
 				"-disable-update-check"
 			]
 			if metrics:
-				command.append("-stats", "-metrics-port", str(metrics_port))
+				command.append("-stats")
+				command.append("-metrics-port")
+				command.append(str(metrics_port))
 				metrics_port += 1
 
 			commands.append(command)
@@ -249,6 +296,11 @@ class Nuclei:
 		threads = []
 		for command in commands:
 			t = Thread(target=scanningThread, args=[host, command, verbose])
+			threads.append(t)
+			t.start()
+
+		if metrics:
+			t = Thread(target=metricsThread, args=[metrics_port])
 			threads.append(t)
 			t.start()
 
