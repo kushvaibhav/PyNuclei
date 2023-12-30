@@ -1,9 +1,10 @@
+""" PyNuclei Module - allow running nuclei from Python """
 import json
 import random
 import subprocess
-import os, shutil
+import os
+import shutil
 import tempfile
-from distutils.spawn import find_executable
 
 from .ScanUtils.UserAgents import USER_AGENTS
 
@@ -29,7 +30,7 @@ class Nuclei:
 
 	@staticmethod
 	def isNucleiInstalled():
-		isInstalled = find_executable("nuclei")
+		isInstalled = shutil.which("nuclei")
 		if not isInstalled:
 			raise NucleiNotFound("Nuclei not found in path")
 
