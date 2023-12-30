@@ -8,7 +8,7 @@ import tempfile
 
 from .ScanUtils.UserAgents import USER_AGENTS
 
-FILE_SEPERATOR = "#SEP#"
+FILE_SEPARATOR = "#SEP#"
 
 class NucleiNotFound(Exception):
 	pass
@@ -209,7 +209,7 @@ class Nuclei:
 		"""
 		Nuclei.isNucleiInstalled()
 
-		fileNameValidHost = f"{host.replace('/', FILE_SEPERATOR)}/"
+		fileNameValidHost = f"{host.replace('/', FILE_SEPARATOR)}/"
 		self.createResultDir(fileNameValidHost)
 		allScans = []
 
