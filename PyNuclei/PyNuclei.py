@@ -31,7 +31,7 @@ class Nuclei:
 	@staticmethod
 	def isNucleiInstalled():
 		isInstalled = shutil.which("nuclei")
-		if not isInstalled:
+		if isInstalled is None:
 			raise NucleiNotFound("Nuclei not found in path")
 
 
