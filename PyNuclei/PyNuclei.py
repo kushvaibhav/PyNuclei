@@ -85,10 +85,10 @@ class Nuclei:
 
             self.current_progress = 0
             self.max_progress = 0
-            for port in max_progress_values.keys():
-                self.max_progress += max_progress_values[port]
-            for port in current_progress_values.keys():
-                self.current_progress += current_progress_values[port]
+            for (_, value) in max_progress_values.items():
+                self.max_progress += value
+            for (_, value) in current_progress_values.items():
+                self.current_progress += value
 
             current_time = datetime.datetime.now()
             if self.current_progress > 0:
