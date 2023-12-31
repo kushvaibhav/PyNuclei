@@ -8,6 +8,7 @@ import tempfile
 from threading import Thread
 import time
 import requests
+import datetime
 
 from .ScanUtils.UserAgents import USER_AGENTS
 
@@ -30,6 +31,7 @@ class Nuclei:
         self.done = 0
         self.current_progress = 0
         self.max_progress = 0
+        self.eta = 0
         self.verbose = False
 
         Nuclei.check_first_run()
@@ -42,11 +44,13 @@ class Nuclei:
     def metrics_thread(self, max_metrics_port):
         """Connect to the /metrics backend and make stats from it"""
 
+        start_time = datetime.datetime.now()
         while True:
             self.current_progress = 0
             self.max_progress = 0
             self.running = 0
             self.done = 0
+            self.eta = 0
 
             for port in range(9092, max_metrics_port):
                 try:
@@ -70,6 +74,16 @@ class Nuclei:
 
                 self.current_progress += json_object["requests"]
                 self.max_progress += json_object["total"]
+
+            current_time = datetime.datetime.now()
+            total_time = current_time - start_time
+            if (self.current_progress + self.running) > 0:
+                estimated_remaining = (
+                    total_time
+                    * (self.max_progress + self.done)
+                    / (self.current_progress + self.running)
+                )
+                self.eta = estimated_remaining
 
             if self.verbose:
                 print(
