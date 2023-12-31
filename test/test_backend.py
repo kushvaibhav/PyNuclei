@@ -11,12 +11,23 @@ import PyNuclei
 
 def monitoring_thread(nuclei_scanner):
     """Check the nuclei_scanner variables values and print"""
+
+    # Wait for the running to go above 0
+    cold_start = False
     while True:
         print(
             f"{nuclei_scanner.running=} {nuclei_scanner.done=} "
             f"{nuclei_scanner.current_progress}/{nuclei_scanner.max_progress}"
-            f"\n{nuclei_scanner.eta=}"
         )
+
+        if nuclei_scanner.running > 0:
+            cold_start = True
+
+        if nuclei_scanner.running == 0:
+            if cold_start:
+                # Wait for it to warm up
+                break
+
         time.sleep(1)
 
 
@@ -26,12 +37,26 @@ nuclei_scanner = PyNuclei.Nuclei()
 t = Thread(target=monitoring_thread, args=[nuclei_scanner])
 t.start()
 scan_results = nuclei_scanner.scan(
-    "http://honey.scanme.sh",
-    templates=["cves", "network", "ssl"],
+    "http://10.3.0.137/",
+    templates=[
+        "default-logins",
+        "exposed-panels",
+        "exposures",
+        "file",
+        "misconfiguration",
+        "miscellaneous",
+        "takeovers",
+        "technologies",
+        "token-spray",
+        "vulnerabilities",
+        "network",
+        "dns",
+        "iot",
+        "ssl",
+    ],
     rate_limit=150,
     verbose=True,
     metrics=True,
 )
 
-t.kill()
 print(scan_results)
