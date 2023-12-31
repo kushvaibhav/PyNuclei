@@ -13,6 +13,7 @@ from .ScanUtils.UserAgents import USER_AGENTS
 
 FILE_SEPARATOR = "#SEP#"
 
+
 class NucleiNotFound(Exception):
     """
     Exception for not finding Nuclei in the system
@@ -29,6 +30,7 @@ class Nuclei:
         self.done = 0
         self.current_progress = 0
         self.max_progress = 0
+        self.verbose = False
 
         Nuclei.check_first_run()
         self.output_path = f"{tempfile.gettempdir()}/"
@@ -69,9 +71,10 @@ class Nuclei:
                 self.current_progress += json_object["requests"]
                 self.max_progress += json_object["total"]
 
-            print(
-                f"{self.running=} {self.done=} {self.current_progress}/{self.max_progress}"
-            )
+            if self.verbose:
+                print(
+                    f"{self.running=} {self.done=} {self.current_progress}/{self.max_progress}"
+                )
             time.sleep(1)  # Sleep for 1sec
 
     def scanning_thread(self, host, command, verbose):
@@ -110,7 +113,7 @@ class Nuclei:
                 py_nuclei_config.write(json.dumps(config_details))
 
     @staticmethod
-    def update_nuclei(verbose=False):
+    def update_nuclei():
         """
         Checks and updates Nuclei.
 
@@ -133,13 +136,13 @@ class Nuclei:
 
         for process in processes:
             output, error = process.communicate()
-            if verbose:
+            if self.verbose:
                 print(f"[Stdout] {output.decode('utf-8', 'ignore')}")
                 print(f"[Stderr] {error.decode('utf-8', 'ignore')}")
 
     @property
     def ignored_templates(self):
-        """ Ignore slow and helper templates """
+        """Ignore slow and helper templates"""
         return [
             "headless",
             "fuzzing",
@@ -148,7 +151,7 @@ class Nuclei:
 
     @property
     def nuclei_templates(self):
-        """ Return a list of usable templates """
+        """Return a list of usable templates"""
         return [
             "cnvd",
             "cves",
@@ -169,7 +172,7 @@ class Nuclei:
         ]
 
     def create_result_dir(self, host):
-        """ Create the result directory nuclei will use """
+        """Create the result directory nuclei will use"""
         try:
             os.makedirs(os.path.expanduser(f"{self.output_path}{host}"))
         except FileExistsError:
@@ -299,6 +302,7 @@ class Nuclei:
         Returns:
                 result [dict]: Scan result from all templates.
         """
+        self.verbose = verbose
         Nuclei.is_nuclei_installed()
 
         file_name_valid_host = f"{host.replace('/', FILE_SEPARATOR)}/"
@@ -339,7 +343,7 @@ class Nuclei:
 
         threads = []
         for command in commands:
-            t = Thread(target=self.scanning_thread, args=[host, command, verbose])
+            t = Thread(target=self.scanning_thread, args=[host, command, self.verbose])
             threads.append(t)
             t.start()
 
