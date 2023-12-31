@@ -24,7 +24,10 @@ def monitoring_thread(nuclei_scanner):
         if nuclei_scanner.running > 0:
             cold_start = True
 
-        if nuclei_scanner.running == 0 and nuclei_scanner.done > 0:
+        if (
+            nuclei_scanner.running == 0
+            and nuclei_scanner.done == nuclei_scanner.selected_templates_count
+        ):
             if cold_start:
                 # Wait for it to warm up
                 break
@@ -38,7 +41,7 @@ nuclei_scanner = PyNuclei.Nuclei()
 t = Thread(target=monitoring_thread, args=[nuclei_scanner])
 t.start()
 scan_results = nuclei_scanner.scan(
-    "https://10.3.0.19/",
+    "https://example.com/",
     templates=[
         "cnvd",
         "cves",
