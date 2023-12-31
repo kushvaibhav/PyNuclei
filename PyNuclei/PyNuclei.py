@@ -49,7 +49,8 @@ class Nuclei:
         # It takes a few milliseconds for things to start, don't stop immediately
         # As it will appear at the beginning that no process is running
         wait_for_running = True
-
+        elapsed = 0
+        progress = 0
         max_progress_values = {}
         current_progress_values = {}
         start_time = datetime.datetime.now()
@@ -65,6 +66,8 @@ class Nuclei:
                     )
                 except requests.ConnectionError as _:
                     self.done += 1
+                    if port in max_progress_values and port in current_progress_values:
+                        current_progress_values[port] = max_progress_values[port]
                     continue
 
                 json_object = {}
@@ -86,21 +89,25 @@ class Nuclei:
 
             self.current_progress = 0
             self.max_progress = 0
-            for (_, value) in max_progress_values.items():
+            for _, value in max_progress_values.items():
                 self.max_progress += value
-            for (_, value) in current_progress_values.items():
+            for _, value in current_progress_values.items():
                 self.current_progress += value
 
             current_time = datetime.datetime.now()
-            if self.current_progress > 0:
-                self.eta = (current_time - start_time) * (
-                    self.max_progress / self.current_progress
-                )
+            if self.current_progress > 0 and self.max_progress > 0:
+                elapsed = current_time - start_time
+                progress = self.current_progress / self.max_progress * 100.0
+                # print(f"{elapsed=} {progress=}")
+                self.eta = (elapsed / progress)
 
             if self.verbose:
-                print(
-                    f"{self.running=} {self.done=} {self.current_progress}/{self.max_progress}"
-                )
+                print(f"{elapsed=} {self.running=} {self.done=}")
+
+                if self.max_progress > 0:
+                    print(
+                        f"Progress: {progress:.02f}%"
+                    )
 
             if (
                 self.running == 0
