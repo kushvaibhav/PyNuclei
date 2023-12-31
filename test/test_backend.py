@@ -18,6 +18,7 @@ def monitoring_thread(nuclei_scanner):
         print(
             f"{nuclei_scanner.running=} {nuclei_scanner.done=} "
             f"{nuclei_scanner.current_progress}/{nuclei_scanner.max_progress}"
+            f"\n{nuclei_scanner.eta=}"
         )
 
         if nuclei_scanner.running > 0:
@@ -37,8 +38,10 @@ nuclei_scanner = PyNuclei.Nuclei()
 t = Thread(target=monitoring_thread, args=[nuclei_scanner])
 t.start()
 scan_results = nuclei_scanner.scan(
-    "http://10.3.0.137/",
+    "https://10.3.0.19/",
     templates=[
+        "cnvd",
+        "cves",
         "default-logins",
         "exposed-panels",
         "exposures",
