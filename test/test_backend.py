@@ -24,7 +24,7 @@ def monitoring_thread(nuclei_scanner):
         if nuclei_scanner.running > 0:
             cold_start = True
 
-        if nuclei_scanner.running == 0:
+        if nuclei_scanner.running == 0 and nuclei_scanner.done > 0:
             if cold_start:
                 # Wait for it to warm up
                 break
