@@ -7,8 +7,8 @@ import shutil
 import tempfile
 from threading import Thread
 import time
-import requests
 import datetime
+import requests
 
 from .ScanUtils.UserAgents import USER_AGENTS
 
@@ -101,7 +101,7 @@ class Nuclei:
                     f"{self.running=} {self.done=} {self.current_progress}/{self.max_progress}"
                 )
 
-            if self.running == 0 and not wait_for_running:
+            if self.running == 0 and self.done > 0 and not wait_for_running:
                 # No more running processes
                 break
 
