@@ -31,6 +31,7 @@ class Nuclei:
         self.done = 0
         self.current_progress = 0
         self.max_progress = 0
+        self.eta = 0
         self.verbose = False
 
         Nuclei.check_first_run()
@@ -47,9 +48,12 @@ class Nuclei:
         # It takes a few milliseconds for things to start, don't stop immediately
         # As it will appear at the beginning that no process is running
         wait_for_running = True
+
+        max_progress_values = {}
+        current_progress_values = {}
+        start_time = datetime.datetime.now()
+
         while True:
-            self.current_progress = 0
-            self.max_progress = 0
             self.running = 0
             self.done = 0
 
@@ -74,8 +78,23 @@ class Nuclei:
                     self.done += 1
                     continue
 
-                self.current_progress += json_object["requests"]
-                self.max_progress += json_object["total"]
+                if port not in max_progress_values:
+                    max_progress_values[port] = json_object["total"]
+
+                current_progress_values[port] = json_object["requests"]
+
+            self.current_progress = 0
+            self.max_progress = 0
+            for port in max_progress_values.keys():
+                self.max_progress += max_progress_values[port]
+            for port in current_progress_values.keys():
+                self.current_progress += current_progress_values[port]
+
+            current_time = datetime.datetime.now()
+            if self.current_progress > 0:
+                self.eta = (current_time - start_time) * (
+                    self.max_progress / self.current_progress
+                )
 
             if self.verbose:
                 print(
