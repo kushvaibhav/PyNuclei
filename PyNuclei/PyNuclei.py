@@ -31,7 +31,6 @@ class Nuclei:
         self.done = 0
         self.current_progress = 0
         self.max_progress = 0
-        self.eta = 0
         self.verbose = False
 
         Nuclei.check_first_run()
@@ -44,13 +43,15 @@ class Nuclei:
     def metrics_thread(self, max_metrics_port):
         """Connect to the /metrics backend and make stats from it"""
 
-        start_time = datetime.datetime.now()
+        # Wait until we see at least one running before exiting
+        # It takes a few milliseconds for things to start, don't stop immediately
+        # As it will appear at the beginning that no process is running
+        wait_for_running = True
         while True:
             self.current_progress = 0
             self.max_progress = 0
             self.running = 0
             self.done = 0
-            self.eta = 0
 
             for port in range(9092, max_metrics_port):
                 try:
@@ -68,6 +69,7 @@ class Nuclei:
                 try:
                     json_object = response.json()
                     self.running += 1
+                    wait_for_running = False
                 except Exception as _:
                     self.done += 1
                     continue
@@ -75,20 +77,15 @@ class Nuclei:
                 self.current_progress += json_object["requests"]
                 self.max_progress += json_object["total"]
 
-            current_time = datetime.datetime.now()
-            total_time = current_time - start_time
-            if (self.current_progress + self.running) > 0:
-                estimated_remaining = (
-                    total_time
-                    * (self.max_progress + self.done)
-                    / (self.current_progress + self.running)
-                )
-                self.eta = estimated_remaining
-
             if self.verbose:
                 print(
                     f"{self.running=} {self.done=} {self.current_progress}/{self.max_progress}"
                 )
+
+            if self.running == 0 and not wait_for_running:
+                # No more running processes
+                break
+
             time.sleep(1)  # Sleep for 1sec
 
     def scanning_thread(self, host, command, verbose):
@@ -127,7 +124,7 @@ class Nuclei:
                 py_nuclei_config.write(json.dumps(config_details))
 
     @staticmethod
-    def update_nuclei():
+    def update_nuclei(verbose=False):
         """
         Checks and updates Nuclei.
 
@@ -150,7 +147,7 @@ class Nuclei:
 
         for process in processes:
             output, error = process.communicate()
-            if self.verbose:
+            if verbose:
                 print(f"[Stdout] {output.decode('utf-8', 'ignore')}")
                 print(f"[Stderr] {error.decode('utf-8', 'ignore')}")
 
