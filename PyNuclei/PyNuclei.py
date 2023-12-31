@@ -33,6 +33,7 @@ class Nuclei:
         self.max_progress = 0
         self.eta = 0
         self.verbose = False
+        self.selected_templates_count = 0
 
         Nuclei.check_first_run()
         self.output_path = f"{tempfile.gettempdir()}/"
@@ -101,7 +102,11 @@ class Nuclei:
                     f"{self.running=} {self.done=} {self.current_progress}/{self.max_progress}"
                 )
 
-            if self.running == 0 and self.done > 0 and not wait_for_running:
+            if (
+                self.running == 0
+                and self.done == (max_metrics_port - 9092)
+                and not wait_for_running
+            ):
                 # No more running processes
                 break
 
@@ -341,6 +346,8 @@ class Nuclei:
 
         if not templates:
             templates = self.nuclei_templates
+
+        self.selected_templates_count = len(templates)
 
         commands = []
         metrics_port = 9092
