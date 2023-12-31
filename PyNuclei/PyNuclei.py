@@ -320,13 +320,14 @@ class Nuclei:
         rate_limit=150,
         verbose=False,
         metrics=False,
+        max_host_error=30,
     ):
         """
         Runs the nuclei scan and returns a formatted dictionary with the results.
         Args:
                 host [str]: The hostname of the target which Nuclei will run against
                 templates [list][Optional]: If templates list not provided all nuclei templates from
-                                                                        "nuclei_templates" property will be executed
+                                            "nuclei_templates" property will be executed
                 user_agents [str][Optional]: If not provided random User-Agents will be used.
                 rate_limit [int][Optional]: Defaults to 150.
         Returns:
@@ -361,6 +362,11 @@ class Nuclei:
                 f"{self.output_path}{file_name_valid_host}{template}",
                 "-disable-update-check",
             ]
+
+            if max_host_error != 30:
+                command.append("-max-host-error")
+                command.append(str(max_host_error))
+
             if metrics:
                 command.append("-stats")
                 command.append("-metrics-port")
