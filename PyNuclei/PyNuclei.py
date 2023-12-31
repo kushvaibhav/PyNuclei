@@ -49,25 +49,35 @@ class Nuclei:
         # It takes a few milliseconds for things to start, don't stop immediately
         # As it will appear at the beginning that no process is running
         wait_for_running = True
-        elapsed = 0
-        progress = 0
-        max_progress_values = {}
-        current_progress_values = {}
-        start_time = datetime.datetime.now()
+        # elapsed = 0
+        progress_values = {}
+        # max_progress_values = {}
+        # current_progress_values = {}
+        # start_time = datetime.datetime.now()
 
         while True:
             self.running = 0
             self.done = 0
 
             for port in range(9092, max_metrics_port):
+                if port not in progress_values:
+                    progress_values[port] = {}
+                    progress_values[port]["done"] = False
+                    progress_values[port]["start_time"] = datetime.datetime.now()
+                    progress_values[port]["max"] = 1
+                    progress_values[port]["current"] = 0
+                    progress_values[port]["eta"] = datetime.timedelta(seconds=0)
+
                 try:
                     response = requests.get(
                         f"http://127.0.0.1:{port}/metrics", timeout=1
                     )
                 except requests.ConnectionError as _:
                     self.done += 1
-                    if port in max_progress_values and port in current_progress_values:
-                        current_progress_values[port] = max_progress_values[port]
+                    if port in progress_values and "max" in progress_values[port]:
+                        progress_values[port]["done"] = True
+                        progress_values[port]["current"] = progress_values[port]["max"]
+
                     continue
 
                 json_object = {}
@@ -82,32 +92,48 @@ class Nuclei:
                     self.done += 1
                     continue
 
-                if port not in max_progress_values:
-                    max_progress_values[port] = json_object["total"]
-
-                current_progress_values[port] = json_object["requests"]
+                progress_values[port]["done"] = False
+                progress_values[port]["max"] = json_object["total"]
+                progress_values[port]["current"] = json_object["requests"]
 
             self.current_progress = 0
             self.max_progress = 0
-            for _, value in max_progress_values.items():
-                self.max_progress += value
-            for _, value in current_progress_values.items():
-                self.current_progress += value
-
             current_time = datetime.datetime.now()
-            if self.current_progress > 0 and self.max_progress > 0:
-                elapsed = current_time - start_time
-                progress = self.current_progress / self.max_progress * 100.0
-                # print(f"{elapsed=} {progress=}")
-                self.eta = (elapsed / progress)
+            # elapsed = current_time - start_time
 
-            if self.verbose:
-                print(f"{elapsed=} {self.running=} {self.done=}")
+            for _, item in progress_values.items():
+                if item["current"] > 0 and item["max"] > 0:
+                    if not item["done"]:
+                        progress = item["current"] / item["max"] * 100.0
+                        if progress != 100:
+                            item["eta"] = (
+                                (current_time - item["start_time"])
+                                / progress
+                                * (100 - progress)
+                            )
+                        else:
+                            item["eta"] = datetime.timedelta(seconds=0)
+                    else:
+                        item["eta"] = datetime.timedelta(seconds=0)
 
-                if self.max_progress > 0:
-                    print(
-                        f"Progress: {progress:.02f}%"
-                    )
+            # print(f"{elapsed=} {self.running=} {self.done=}")
+            self.eta = datetime.timedelta(seconds=0)
+            for port in sorted(progress_values.keys()):
+                item = progress_values[port]
+
+                self.current_progress += item["current"]
+                self.max_progress += item["max"]
+
+                if item["eta"] > self.eta:
+                    self.eta = item["eta"]
+
+                # if item["max"] > 0:
+                #     print(
+                #         f"{port=}, current: {item['current']}, "
+                #         f"max: {item['max']}, done: {item['done']}, "
+                #         f"eta: {item['eta'].seconds}s "
+                #         f"progress: {item['current']/item['max']*100.0:.2f}%"
+                #     )
 
             if (
                 self.running == 0
