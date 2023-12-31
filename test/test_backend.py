@@ -15,6 +15,7 @@ def monitoring_thread(nuclei_scanner):
         print(
             f"{nuclei_scanner.running=} {nuclei_scanner.done=} "
             f"{nuclei_scanner.current_progress}/{nuclei_scanner.max_progress}"
+            f"\n{nuclei_scanner.eta=}"
         )
         time.sleep(1)
 
