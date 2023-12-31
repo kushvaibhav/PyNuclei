@@ -19,8 +19,7 @@ setuptools.setup(
     ],
     # package_dir={"": "PyNuclei"},
     # packages=setuptools.find_packages(where="PyNuclei"),
-    package_data={'': ['.config']},
+    package_data={"": [".config"]},
     include_package_data=True,
     python_requires=">=3.4",
 )
-
