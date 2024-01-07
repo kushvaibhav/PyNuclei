@@ -29,13 +29,18 @@ class Nuclei:
     def __init__(self, nuclei_path=None):
         self.running = 0
         self.done = 0
-        self.eta = 0
+        self.eta = datetime.timedelta(seconds=0)
+        self.max_progress = 0
+        self.current_progress = 0
         self.verbose = False
         self.selected_templates_count = 0
         # Allow changing the path where nuclei is installed (instead of expecting it to be in $PATH)
+        # Check if the '/' is at the end - and remove it if "yes"
+        if nuclei_path is not None and nuclei_path[-1] == "/":
+            nuclei_path = nuclei_path[:-1]
         self.nuclei_path = nuclei_path
 
-        Nuclei.check_first_run()
+        Nuclei.check_first_run(nuclei_path)
         self.output_path = f"{tempfile.gettempdir()}/"
         try:
             os.makedirs(os.path.expanduser(self.output_path))
@@ -92,7 +97,15 @@ class Nuclei:
                 progress_values[port]["max"] = json_object["total"]
                 progress_values[port]["current"] = json_object["requests"]
 
+            self.max_progress = 0
+            self.current_progress = 0
+
             for _, item in progress_values.items():
+                self.max_progress += item["max"]
+                self.current_progress += item["current"]
+                if item["eta"] > self.eta:
+                    self.eta = item["eta"]
+
                 if item["current"] > 0 and item["max"] > 0:
                     if not item["done"]:
                         progress = item["current"] / item["max"] * 100.0
@@ -139,7 +152,7 @@ class Nuclei:
             raise NucleiNotFound("Nuclei not found in path")
 
     @staticmethod
-    def check_first_run():
+    def check_first_run(nuclei_path=None):
         """
         Checks if the PyNuclei module was run for the first time - if yes, update the templates
         """
@@ -149,7 +162,7 @@ class Nuclei:
             config_details = json.loads(py_nuclei_config.read())
             if config_details["FIRST_RUN"]:
                 print("Configuring PyNuclei for First Run...")
-                Nuclei.update_nuclei()
+                Nuclei.update_nuclei(nuclei_path=nuclei_path)
 
                 config_details["FIRST_RUN"] = False
                 py_nuclei_config.seek(0)
@@ -166,14 +179,14 @@ class Nuclei:
         """
 
         # Make sure Nuclei is installed
-        Nuclei.is_nuclei_installed()
+        Nuclei.is_nuclei_installed(nuclei_path)
 
         processes = []
 
         nuclei_binary = "nuclei"
         if nuclei_path:
             nuclei_binary = f"{nuclei_path}/nuclei"
-        commands = [[nuclei_binary, "-update-templates"], ["nuclei", "-update"]]
+        commands = [[nuclei_binary, "-update-templates"], [nuclei_binary, "-update"]]
 
         for command in commands:
             processes.append(
@@ -352,7 +365,7 @@ class Nuclei:
                 result [dict]: Scan result from all templates.
         """
         self.verbose = verbose
-        Nuclei.is_nuclei_installed()
+        Nuclei.is_nuclei_installed(self.nuclei_path)
 
         file_name_valid_host = f"{host.replace('/', FILE_SEPARATOR)}/"
         self.create_result_dir(file_name_valid_host)
