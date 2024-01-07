@@ -34,6 +34,8 @@ class Nuclei:
         self.current_progress = 0
         self.verbose = False
         self.selected_templates_count = 0
+        self.processes = []
+
         # Allow changing the path where nuclei is installed (instead of expecting it to be in $PATH)
         # Check if the '/' is at the end - and remove it if "yes"
         if nuclei_path is not None and nuclei_path[-1] == "/":
@@ -132,11 +134,18 @@ class Nuclei:
 
             time.sleep(1)  # Sleep for 1sec
 
+    def stop(self):
+        """Allow stopping of nuclei processes"""
+        for process in self.processes:
+            process.kill()
+
     def scanning_thread(self, host, command, verbose):
         """Launch the nuclei process and output the outcome if 'verbose'"""
         process = subprocess.Popen(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
+        self.processes.append(process)
+
         output, error = process.communicate()
         if verbose:
             print(f"[Stdout] [{host}] {output.decode('utf-8', 'ignore')}")
