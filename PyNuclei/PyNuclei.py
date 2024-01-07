@@ -26,14 +26,14 @@ class Nuclei:
     Class handling the Nuclei scans and result generation.
     """
 
-    def __init__(self):
+    def __init__(self, nuclei_path=None):
         self.running = 0
         self.done = 0
-        self.current_progress = 0
-        self.max_progress = 0
         self.eta = 0
         self.verbose = False
         self.selected_templates_count = 0
+        # Allow changing the path where nuclei is installed (instead of expecting it to be in $PATH)
+        self.nuclei_path = nuclei_path
 
         Nuclei.check_first_run()
         self.output_path = f"{tempfile.gettempdir()}/"
@@ -49,11 +49,7 @@ class Nuclei:
         # It takes a few milliseconds for things to start, don't stop immediately
         # As it will appear at the beginning that no process is running
         wait_for_running = True
-        # elapsed = 0
         progress_values = {}
-        # max_progress_values = {}
-        # current_progress_values = {}
-        # start_time = datetime.datetime.now()
 
         while True:
             self.running = 0
@@ -96,16 +92,12 @@ class Nuclei:
                 progress_values[port]["max"] = json_object["total"]
                 progress_values[port]["current"] = json_object["requests"]
 
-            self.current_progress = 0
-            self.max_progress = 0
-            current_time = datetime.datetime.now()
-            # elapsed = current_time - start_time
-
             for _, item in progress_values.items():
                 if item["current"] > 0 and item["max"] > 0:
                     if not item["done"]:
                         progress = item["current"] / item["max"] * 100.0
                         if progress != 100:
+                            current_time = datetime.datetime.now()
                             item["eta"] = (
                                 (current_time - item["start_time"])
                                 / progress
@@ -115,25 +107,6 @@ class Nuclei:
                             item["eta"] = datetime.timedelta(seconds=0)
                     else:
                         item["eta"] = datetime.timedelta(seconds=0)
-
-            # print(f"{elapsed=} {self.running=} {self.done=}")
-            self.eta = datetime.timedelta(seconds=0)
-            for port in sorted(progress_values.keys()):
-                item = progress_values[port]
-
-                self.current_progress += item["current"]
-                self.max_progress += item["max"]
-
-                if item["eta"] > self.eta:
-                    self.eta = item["eta"]
-
-                # if item["max"] > 0:
-                #     print(
-                #         f"{port=}, current: {item['current']}, "
-                #         f"max: {item['max']}, done: {item['done']}, "
-                #         f"eta: {item['eta'].seconds}s "
-                #         f"progress: {item['current']/item['max']*100.0:.2f}%"
-                #     )
 
             if (
                 self.running == 0
@@ -156,9 +129,12 @@ class Nuclei:
             print(f"[Stderr] [{host}] {error.decode('utf-8', 'ignore')}")
 
     @staticmethod
-    def is_nuclei_installed():
-        """Checks whether Nuclei is installed"""
-        is_installed = shutil.which("nuclei")
+    def is_nuclei_installed(nuclei_path=None):
+        """
+        Checks whether Nuclei is installed
+            - Use nuclei_path, to override the path
+        """
+        is_installed = shutil.which("nuclei", path=nuclei_path)
         if is_installed is None:
             raise NucleiNotFound("Nuclei not found in path")
 
@@ -181,7 +157,7 @@ class Nuclei:
                 py_nuclei_config.write(json.dumps(config_details))
 
     @staticmethod
-    def update_nuclei(verbose=False):
+    def update_nuclei(verbose=False, nuclei_path=None):
         """
         Checks and updates Nuclei.
 
@@ -193,7 +169,11 @@ class Nuclei:
         Nuclei.is_nuclei_installed()
 
         processes = []
-        commands = [["nuclei", "-update-templates"], ["nuclei", "-update"]]
+
+        nuclei_binary = "nuclei"
+        if nuclei_path:
+            nuclei_binary = f"{nuclei_path}/nuclei"
+        commands = [[nuclei_binary, "-update-templates"], ["nuclei", "-update"]]
 
         for command in commands:
             processes.append(
@@ -388,8 +368,12 @@ class Nuclei:
             if not user_agent:
                 user_agent = random.choice(USER_AGENTS)
 
+            nuclei_binary = "nuclei"
+            if self.nuclei_path:
+                nuclei_binary = f"{self.nuclei_path}/nuclei"
+
             command = [
-                "nuclei",
+                nuclei_binary,
                 "-header",
                 f"'User-Agent: {user_agent}'",
                 "-rl",
