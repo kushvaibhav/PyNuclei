@@ -99,6 +99,7 @@ class Nuclei:
 
             self.max_progress = 0
             self.current_progress = 0
+            self.eta = datetime.timedelta(seconds=0)
 
             for _, item in progress_values.items():
                 self.max_progress += item["max"]
