@@ -36,6 +36,7 @@ class Nuclei:
         self.verbose = False
         self.selected_templates_count = 0
         self.processes = []
+        self.findings = 0
 
         # Allow changing the path where nuclei is installed (instead of expecting it to be in $PATH)
         # Check if the '/' is at the end - and remove it if "yes"
@@ -70,6 +71,7 @@ class Nuclei:
                     progress_values[port]["start_time"] = datetime.datetime.now()
                     progress_values[port]["max"] = 1
                     progress_values[port]["current"] = 0
+                    progress_values[port]["matched"] = 0
                     progress_values[port]["eta"] = datetime.timedelta(seconds=0)
 
                 try:
@@ -96,6 +98,7 @@ class Nuclei:
                     self.done += 1
                     continue
 
+                progress_values[port]["matched"] = json_object["matched"]
                 progress_values[port]["done"] = False
                 progress_values[port]["max"] = json_object["total"]
                 progress_values[port]["current"] = json_object["requests"]
@@ -103,10 +106,12 @@ class Nuclei:
             self.max_progress = 0
             self.current_progress = 0
             self.eta = datetime.timedelta(seconds=0)
+            self.findings = 0
 
             for _, item in progress_values.items():
                 self.max_progress += item["max"]
                 self.current_progress += item["current"]
+                self.findings += item["matched"]
                 if item["eta"] > self.eta:
                     self.eta = item["eta"]
 
