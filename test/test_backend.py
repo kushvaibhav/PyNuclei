@@ -88,7 +88,8 @@ def monitoring_thread(nuclei_scanner):
         time.sleep(1)
 
 
-nuclei_scanner = PyNuclei.Nuclei(nuclei_path="/home/noam/go/bin/")
+home_folder = os.path.expanduser("~")
+nuclei_scanner = PyNuclei.Nuclei(nuclei_path=home_folder)
 # http://honey.scanme.sh is a specially made host by Nuclei team to test the setups
 
 t = Thread(target=monitoring_thread, args=[nuclei_scanner])
