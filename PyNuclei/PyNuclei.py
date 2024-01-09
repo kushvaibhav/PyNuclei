@@ -250,7 +250,7 @@ class Nuclei:
         except FileExistsError:
             pass
 
-    def _return_templates_details(self):
+    def return_templates_details(self):
         """
         Process the templates available and return them as a structure
         WARNING: This is a VERY time consuming function
