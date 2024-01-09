@@ -90,7 +90,7 @@ def monitoring_thread(nuclei_scanner):
 
 
 home_folder = os.path.expanduser("~")
-nuclei_scanner = PyNuclei.Nuclei(nuclei_path=home_folder)
+nuclei_scanner = PyNuclei.Nuclei(nuclei_path=f"{home_folder}/go/bin")
 # http://honey.scanme.sh is a specially made host by Nuclei team to test the setups
 
 t = Thread(target=monitoring_thread, args=[nuclei_scanner])
