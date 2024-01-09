@@ -9,6 +9,7 @@ from threading import Thread
 import time
 import datetime
 import requests
+import yaml
 
 from .ScanUtils.UserAgents import USER_AGENTS
 
@@ -248,6 +249,56 @@ class Nuclei:
             os.makedirs(os.path.expanduser(f"{self.output_path}{host}"))
         except FileExistsError:
             pass
+
+    def _return_templates_details(self):
+        """
+        Process the templates available and return them as a structure
+        WARNING: This is a VERY time consuming function
+        """
+        nuclei_binary = "nuclei"
+        if self.nuclei_path:
+            nuclei_binary = f"{self.nuclei_path}/nuclei"
+        command = [nuclei_binary, "-no-color", "-template-display"]
+
+        process = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+
+        output, _ = process.communicate()
+        output = output.decode()
+
+        templates = []
+        # re is really slow to do matches - lets use simple 'find'
+        start_template = output.find("Template: ")
+        while start_template != -1:
+            # print(f"{len(templates)=:,}             \r", end="")
+            end_template = output.find("# digest: ", start_template)
+            if end_template == -1:
+                raise ValueError("Cannot find '# digest: ")
+
+            template = output[start_template:end_template]
+            if (
+                template.find("Template: ", len("Template: ")) != -1
+            ):  # len(...) = skip the first the name Template at the beginning
+                raise ValueError(
+                    "Template includes another Template inside it, is '# digest :' missing?"
+                )
+
+            template_obj = yaml.safe_load(template)
+
+            keys = list(template_obj.keys())
+            for key in keys:
+                # Keep only the info we want
+                if key not in ["Template", "id", "info"]:
+                    del template_obj[key]
+
+            templates.append(template_obj)
+
+            # Reducing the size of 'output' is very time consuming, we will avoid it
+            # output = output[end_template:]
+            start_template = output.find("Template: ", end_template)
+
+        return templates
 
     def _parse_nuclei_scan(self, host, templates):
         report = []
