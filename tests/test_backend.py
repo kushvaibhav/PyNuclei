@@ -4,6 +4,7 @@ import sys
 import time
 from threading import Thread
 from string import Formatter
+import os
 
 # Include the PyNuclei path so that we can use the classes found in it
 sys.path.append("../PyNuclei")
