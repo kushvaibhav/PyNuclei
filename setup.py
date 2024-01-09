@@ -20,4 +20,7 @@ setuptools.setup(
     package_data={"": [".config"]},
     include_package_data=True,
     python_requires=">=3.4",
+    install_requires = [
+        "PyYAML"
+    ]
 )
