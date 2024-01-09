@@ -143,7 +143,7 @@ class Nuclei:
     def stop(self):
         """Allow stopping of nuclei processes"""
         for process in self.processes:
-            process.kill()
+            process.send_signal(2) # SIGINT
 
     def scanning_thread(self, host, command, verbose):
         """Launch the nuclei process and output the outcome if 'verbose'"""
