@@ -12,7 +12,7 @@ nuclei_scanner = PyNuclei.Nuclei()
 scan_results = nuclei_scanner.scan(
     "https://example.com/",
     templates=[
-        "cves", "cnvd"
+        # "cves", "cnvd"
         "http/exposures/apis/openapi.yaml",
         "http/exposures/apis/openapi.yaml",
         "http/exposures/logs/badarg-log.yaml",
