@@ -7,7 +7,7 @@ sys.path.append("../PyNuclei")
 import PyNuclei
 
 NUCLEI_PATH = f"{os.getcwd()}/bin"
-nucleiScanner = PyNuclei.Nuclei()
+nucleiScanner = PyNuclei.Nuclei(NUCLEI_PATH)
 
 # http://honey.scanme.sh is a specially made host by Nuclei team to test the setups
 scanResults = nucleiScanner.scan(
