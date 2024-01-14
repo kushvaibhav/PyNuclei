@@ -541,7 +541,6 @@ class Nuclei:
 
 		report = self._parseNucleiScan(fileNameValidHost, templates)
 
-		print(f"{self.outputPath}{fileNameValidHost}")
 		shutil.rmtree(f"{self.outputPath}{fileNameValidHost}", ignore_errors=True)
 
 		return self._formatNucleiReport(report)
