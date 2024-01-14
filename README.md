@@ -18,7 +18,7 @@ pip3 install PyNuclei
 ```python
 from PyNuclei import Nuclei
 """
-nucleiScanner = Nuclei(templatePath)
+Nuclei(templatePath)
 Args:
     nucleiPath [str][Optional]: The path of nuclei binary file
 
