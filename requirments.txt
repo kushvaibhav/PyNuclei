@@ -1,0 +1,3 @@
+PyYAML
+requests
+fake_useragent
