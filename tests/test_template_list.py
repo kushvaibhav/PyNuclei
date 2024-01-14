@@ -6,7 +6,8 @@ import sys
 sys.path.append("../PyNuclei")
 import PyNuclei
 
-home_folder = os.path.expanduser("~")
-nuclei_scanner = PyNuclei.Nuclei(nuclei_path=f"{home_folder}/go/bin")
+NUCLEI_PATH = f"{os.getcwd()}/bin"
+nuclei_scanner = PyNuclei.Nuclei(NUCLEI_PATH)
 
-templates = nuclei_scanner.return_templates_details()
+templateDetails = nuclei_scanner.returnTemplatesDetails()
+print(templateDetails)

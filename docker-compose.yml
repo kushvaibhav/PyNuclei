@@ -1,0 +1,18 @@
+version: '3.7'
+
+services:
+  py-nuclei:
+    build: .
+    init: true
+    restart: always
+    volumes:
+      - .:/opt/app/src
+    command: "sh -c 'while true; do echo PyNuclei Running $(date); sleep 5; done'"
+    container_name: "py-nuclei"
+    networks: 
+      - "py-nuclei"
+
+networks:
+  py-nuclei:
+    driver: "bridge"
+    name: "py-nuclei"
