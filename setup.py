@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="PyNuclei",
-    version="1.1",
+    version="1.3",
     author="Vaibhav Kushwaha",
     author_email="vaibhavkush.007@gmail.com",
     description="PyNuclei is an unofficial python library for Nuclei Scanner.",
@@ -17,7 +17,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "PyNuclei"},
-    packages=setuptools.find_packages(where="PyNuclei"),
+    package_data={"": [".config"]},
+    include_package_data=True,
     python_requires=">=3.4",
+    install_requires=["PyYAML", "fake_useragent"],
 )

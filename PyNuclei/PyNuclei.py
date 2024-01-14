@@ -18,7 +18,6 @@ from fake_useragent import FakeUserAgent
 from distutils.spawn import find_executable
 
 FILE_SEPARATOR = "#SEP#"
-METRIC_HOST = socket.gethostbyname(socket.gethostname())
 
 class NucleiNotFound(Exception):
 	pass
@@ -197,7 +196,7 @@ class Nuclei:
 
 				try:
 					response = requests.get(
-						f"http://{METRIC_HOST}:{port}/metrics", timeout=1
+						f"http://127.0.0.1:{port}/metrics", timeout=1
 					)
 				except (requests.ConnectionError, requests.Timeout) as _:
 					# If the port is closed, then scan must be complete
@@ -214,7 +213,7 @@ class Nuclei:
 				try:
 					responseObj = response.json()
 				except Exception as _:
-					print(f"[PyNuclei]Metrics [Warning] - Unable to decode response from http://{METRIC_HOST}:{port}/metrics")
+					print(f"[PyNuclei]Metrics] [Warning] - Unable to decode response from http://127.0.0.1:{port}/metrics")
 					continue
 
 				progressValues[port]["done"] = False
@@ -408,9 +407,6 @@ class Nuclei:
 				raise ValueError("Cannot find '# digest: ")
 
 			template = output[startTemplate:endTemplate]
-			# if template.find("Template: ", len("Template: ")) != -1:
-			# 	raise ValueError("Template includes another Template inside it, is '# digest :' missing?")
-
 			templateObj = yaml.safe_load(template)
 
 			keys = list(templateObj.keys())
