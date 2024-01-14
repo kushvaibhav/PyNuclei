@@ -285,45 +285,6 @@ class Nuclei:
 			print(f"[Stderr] [{host}] {error.decode('utf-8', 'ignore')}")
 
 
-	def returnTemplatesDetails(self):
-		"""
-		Process the templates available and return them as a structure
-		WARNING: This is a VERY time consuming function
-		"""		
-		command = ["nuclei", "--no-color", "--template-display"]
-
-		process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-		output, _ = process.communicate()
-		output = output.decode()
-
-		templates = []
-		# re is really slow to do matches - lets use simple 'find'
-		startTemplate = output.find("Template: ")
-		while startTemplate != -1:
-			endTemplate = output.find("# digest: ", startTemplate)
-			if endTemplate == -1 and not templates:
-				raise ValueError("Cannot find '# digest: ")
-
-			template = output[startTemplate:endTemplate]
-			# if template.find("Template: ", len("Template: ")) != -1:
-			# 	raise ValueError("Template includes another Template inside it, is '# digest :' missing?")
-
-			templateObj = yaml.safe_load(template)
-
-			keys = list(templateObj.keys())
-			for key in keys:
-				# Keep only the info we want
-				if key not in ["Template", "id", "info"]:
-					del templateObj[key]
-
-			templates.append(templateObj)
-
-			# Reducing the size of 'output' is very time consuming, we will avoid it
-			startTemplate = output.find("Template: ", endTemplate)
-
-		return templates
-
-
 	def _parseNucleiScan(self, host, templates):
 		report = list()
 
@@ -425,6 +386,45 @@ class Nuclei:
 				continue
 		
 		return formattedReport
+
+
+	def returnTemplatesDetails(self):
+		"""
+		Process the templates available and return them as a structure
+		WARNING: This is a VERY time consuming function
+		"""		
+		command = ["nuclei", "--no-color", "--template-display"]
+
+		process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		output, _ = process.communicate()
+		output = output.decode()
+
+		templates = []
+		# re is really slow to do matches - lets use simple 'find'
+		startTemplate = output.find("Template: ")
+		while startTemplate != -1:
+			endTemplate = output.find("# digest: ", startTemplate)
+			if endTemplate == -1 and not templates:
+				raise ValueError("Cannot find '# digest: ")
+
+			template = output[startTemplate:endTemplate]
+			# if template.find("Template: ", len("Template: ")) != -1:
+			# 	raise ValueError("Template includes another Template inside it, is '# digest :' missing?")
+
+			templateObj = yaml.safe_load(template)
+
+			keys = list(templateObj.keys())
+			for key in keys:
+				# Keep only the info we want
+				if key not in ["Template", "id", "info"]:
+					del templateObj[key]
+
+			templates.append(templateObj)
+
+			# Reducing the size of 'output' is very time consuming, we will avoid it
+			startTemplate = output.find("Template: ", endTemplate)
+
+		return templates
 
 	
 	def scan(self, host, templates=[], userAgent="", rateLimit=150, verbose=False, metrics=False, maxHostError=30):
