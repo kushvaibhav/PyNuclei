@@ -54,7 +54,7 @@ class Nuclei:
 		try:
 			os.makedirs(os.path.expanduser(self.outputPath))
 		except FileExistsError:
-			print(f"[PyNuclei] [WARN] {self.outputPath} directory already exist")
+			print(f"[PyNuclei] [WARN] Output directory already exist {self.outputPath}")
 
 
 	@staticmethod
@@ -469,8 +469,8 @@ class Nuclei:
 			userAgents [str][Optional]: If not provided random User-Agents will be used.
 			rateLimit [int][Optional]: Defaults to 150.
 			metrics [bool][Optional]: It shows the scan progress
-			maxHostError [int][Optional]: It determine to left host for scanning after n number of connection fails
-			stopAfter [int][Optional]: Stop scanning after getting n number of findings, only use for templates instead of template categories
+			maxHostError [int][Optional]: It determine to skip host for scanning after n number of connection failures
+			stopAfter [int][Optional]: Stop scanning after getting n number of findings, only use for template paths instead of template categories
 		
 		Returns:
 			result [dict]: Scan result from all templates.
