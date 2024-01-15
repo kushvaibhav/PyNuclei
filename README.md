@@ -18,18 +18,39 @@ pip3 install PyNuclei
 ```python
 from PyNuclei import Nuclei
 """
+Nuclei(templatePath)
+Args:
+    nucleiPath [str][Optional]: The path of nuclei binary file
+
+Returns:
+    PyNuclei.Nuclei class object
+
 nucleiScanner.scan()
 Args:
     host [str]: The hostname of the target which Nuclei will run against
-    templates [list][Optional]: If templates list not provided all nuclei templates from "nucleiTemplates" property will be executed
+    templates [list][Optional]: If the templates list is not provided all nuclei templates from the "nucleiTemplates" property will be executed
     userAgents [str][Optional]: If not provided random User-Agents will be used.
     rateLimit [int][Optional]: Defaults to 150.
+    maxHostError [int][Optional]: It determines to skip host for scanning after n number of connection failures
+    stopAfter [int][Optional]: Stop scanning after getting n number of findings, only use for template paths instead of template categories
+    metrics [bool][Optional]: It shows the scan progress.   
+    verbose [bool][Optional]: Show nuclei results output and PyNuclei warning logs.
+
 Returns:
-    result [dict]: Scan result from all templates.
+    result [dict]: Scan results from all templates.
 """
 
-nucleiScanner = Nuclei()
-scanResult = nucleiScanner.scan("example.com", template=["cves","network", "ssl"], rateLimit=150))
+nucleiPath = "/opt/app/src/bin/nuclei"
+nucleiScanner = Nuclei(nucleiPath)
+scanResult = nucleiScanner.scan(
+    "example.com",
+    templates=["cves", "network", "ssl"],
+    rateLimit=150, 
+    verbose=False,
+    metrics=False,
+    maxHostError=30,
+    stopAfter=None
+)
 print(scanResult)
 ```
 
@@ -58,6 +79,11 @@ print(nucleiScanner.ignoredTemplates)
 [
     "headless", "fuzzing", "helpers", 
 ]
+
+"""
+Returns details of all nuclei templates in JSON format
+"""
+print(nucleiScanner.returnTemplatesDetails())
 ```
 NOTE: You can run ignored templates by passing them in the template parameter in ```nucleiScanner.scan(<host>, template=nucleiScanner.ignoredTemplates)```
 
