@@ -13,7 +13,7 @@ nucleiScanner = PyNuclei.Nuclei(NUCLEI_PATH)
 scanResults = nucleiScanner.scan(
     "http://honey.scanme.sh",
     templates=[
-        "dns/caa-fingerprint.yaml"
+        "dns/caa-fingerprint.yaml",
         "network/detection/openssh-detect.yaml",
         "http/miscellaneous/http-trace.yaml",
         "http/miscellaneous/trace-method.yaml",
@@ -21,11 +21,15 @@ scanResults = nucleiScanner.scan(
         "http/exposures/apis/openapi.yaml",
         "http/exposures/logs/badarg-log.yaml",
         "http/exposures/logs/ws-ftp-log.yaml"
-        "cves", "cnvd"
+        "http/cves/2002/CVE-2002-1131.yaml",
+        "http/cves/2004/CVE-2004-0519.yaml",
+        "http/cves/2007/CVE-2007-0885.yaml",
+        "http/cves/2008/CVE-2008-2398.yaml",
     ],
     rateLimit=150,
     verbose=True,
     metrics=True,
+    stopAfter=6
 )
 
 

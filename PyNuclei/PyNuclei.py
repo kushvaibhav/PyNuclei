@@ -54,7 +54,7 @@ class Nuclei:
 		try:
 			os.makedirs(os.path.expanduser(self.outputPath))
 		except FileExistsError:
-			print(f"[PyNuclei] [WARN] {self.outputPath} directory already exist")
+			print(f"[PyNuclei] [WARN] Output directory already exist {self.outputPath}")
 
 
 	@staticmethod
@@ -86,10 +86,11 @@ class Nuclei:
 		Checks for any updates to Nuclei or Nuclei Templates,
 		and installs them if any.
 		"""
+		Nuclei.isNucleiInstalled(nucleiPath)
+
 		processes = list()
 		nucleiBinary = "nuclei"
 		if nucleiPath:
-			Nuclei.isNucleiInstalled(nucleiPath)
 			nucleiBinary = f"{nucleiPath}/{nucleiBinary}"
 		
 		commands = [
@@ -139,7 +140,8 @@ class Nuclei:
 		try:
 			os.makedirs(os.path.expanduser(f"{self.outputPath}{host}"))
 		except FileExistsError:
-			pass
+			if self.verbose:
+				print(f"[PyNuclei] [WARN] Result directory exist {self.outputPath}{host}")
 
 
 	def stringifyTimeDelta(self, tdelta, fmt="{D:02}d {H:02}h {M:02}m {S:02}s", inputType="timedelta"):
@@ -183,7 +185,7 @@ class Nuclei:
 		desiredFields = [fieldTuple[1] for fieldTuple in f.parse(fmt)]
 		possibleFields = ("W", "D", "H", "M", "S")
 		constants = {"W": 604800, "D": 86400, "H": 3600, "M": 60, "S": 1}
-		values = {}
+		values = dict()
 		for field in possibleFields:
 			if field in desiredFields and field in constants:
 				values[field], remainder = divmod(remainder, constants[field])
@@ -223,12 +225,14 @@ class Nuclei:
 
 					continue
 
-				responseObj = {}
+				responseObj = dict()
 				self.running += 1
 				try:
 					responseObj = response.json()
 				except Exception as _:
-					print(f"[PyNucleiMetrics] [WARN] - Unable to decode response from http://127.0.0.1:{port}/metrics")
+					if self.verbose:
+						print(f"[PyNucleiMetrics] [WARN] - Unable to decode response from http://127.0.0.1:{port}/metrics")
+
 					continue
 
 				progressValues[port]["done"] = False
@@ -265,12 +269,12 @@ class Nuclei:
 	def _monitorProgress(self):
 		while True:
 			if self.maxProgress == 0:
-				time.sleep(0.5) # Waiting for threads to spawn
+				time.sleep(0.5) 	# Waiting for threads to spawn
 				continue
 
 			if self.stopAfter and self.findings >= self.stopAfter:
 				print(f"[PyNucleiMonitor] [INFO] Stopping nuclei processes, finding count: {self.findings}")
-				time.sleep(1) # Waiting for nuclei processes to generate results
+				time.sleep(1) 		# Waiting for nuclei processes to generate result
 				self.stop()
 			
 			else:
@@ -292,7 +296,7 @@ class Nuclei:
 			if not self.nucleiThreadCount() and not self.metricsThreadCount():
 				break
 
-			time.sleep(1) 		# Waiting for threads to spawn
+			time.sleep(1) 			# Waiting for threads to spawn
 
 
 	def _nucleiThread(self, host, command, verbose):
@@ -307,12 +311,14 @@ class Nuclei:
 
 
 	def _parseNucleiScan(self, host, templates):
+		"""Parse nuclei scan results in json object"""
+		
 		report = list()
-
 		for template in templates:
 			try:
-				templateOutputPath = f"{self.outputPath}{host}{template.split('/')[0]}" \
-					if ".yaml" in template or ".yml" in template else f"{self.outputPath}{host}{template}"
+				templateOutputPath = f"{self.outputPath}{host}{template}"
+				if ".yaml" in template or ".yml" in template:
+					templateOutputPath = f"{self.outputPath}{host}{template.split('/')[-1].split('/')[0]}"
 
 				with open(templateOutputPath, "r") as scanResult:
 					report.extend(json.load(scanResult))
@@ -424,8 +430,7 @@ class Nuclei:
 		output, _ = process.communicate()
 		output = output.decode()
 
-		templates = []
-		# re is really slow to do matches - lets use simple 'find'
+		templates = list()
 		startTemplate = output.find("Template: ")
 		while startTemplate != -1:
 			endTemplate = output.find("# digest: ", startTemplate)
@@ -455,7 +460,7 @@ class Nuclei:
 			process.send_signal(2)  # SIGINT
 
 
-	def scan(self, host, templates=[], userAgent="", rateLimit=150, verbose=False, metrics=False, maxHostError=30, stopAfter=None):
+	def scan(self, host, templates=list(), userAgent="", rateLimit=150, verbose=False, metrics=False, maxHostError=30, stopAfter=None):
 		"""
 		Runs the nuclei scan and returns a formatted dictionary with the results.
 		Args:
@@ -464,8 +469,8 @@ class Nuclei:
 			userAgents [str][Optional]: If not provided random User-Agents will be used.
 			rateLimit [int][Optional]: Defaults to 150.
 			metrics [bool][Optional]: It shows the scan progress
-			maxHostError [int][Optional]: It determine to left host for scanning after n number of connection fails
-			stopAfter [int][Optional]: Stop scanning after getting n number of findings, only use for templates instead of template categories
+			maxHostError [int][Optional]: It determine to skip host for scanning after n number of connection failures
+			stopAfter [int][Optional]: Stop scanning after getting n number of findings, only use for template paths instead of template categories
 		
 		Returns:
 			result [dict]: Scan result from all templates.
@@ -493,8 +498,9 @@ class Nuclei:
 			if not userAgent:
 				userAgent = FakeUserAgent.random
 
-			templateOutputPath = f"{self.outputPath}{fileNameValidHost}{template.split('/')[0]}" \
-				if ".yaml" in template or ".yml" in template else f"{self.outputPath}{fileNameValidHost}{template}"
+			templateOutputPath = f"{self.outputPath}{fileNameValidHost}{template}"
+			if ".yaml" in template or ".yml" in template:
+				templateOutputPath = f"{self.outputPath}{fileNameValidHost}{template.split('/')[-1].split('/')[0]}"
 
 			command = [
 				self.nucleiBinary, '-header', f"'User-Agent: {userAgent}'", 
@@ -518,8 +524,8 @@ class Nuclei:
 		threads = list()
 		for command in commands:
 			threadMetricsPort = command[command.index("-metrics-port") + 1] if metrics else None
-			scanThread = Thread(name=f"PyNucleiScanThread-{threadMetricsPort}" if threadMetricsPort \
-				else "PyNucleiScanThread", target=self._nucleiThread, args=[host, command, self.verbose])
+			threadName = f"PyNucleiScanThread-{threadMetricsPort}" if threadMetricsPort else "PyNucleiScanThread"
+			scanThread = Thread(name=threadName, target=self._nucleiThread, args=[host, command, self.verbose])
 			threads.append(scanThread)
 			scanThread.start()
 
@@ -527,7 +533,7 @@ class Nuclei:
 			monitorThread = Thread(name="PyNucleiMonitorThread", target=self._monitorProgress)
 			metricsThread = Thread(name="PyNucleiMetricThread", target=self._metricsThread, args=[metricsPort])
 			threads.extend([monitorThread, metricsThread])
-			metricsThread.start() # Starting metrics thread before monitoring progress
+			metricsThread.start() # Starting metrics thread before monitorThread
 			monitorThread.start()
 
 		for thread in threads:
