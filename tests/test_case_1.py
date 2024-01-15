@@ -20,7 +20,7 @@ scanResults = nucleiScanner.scan(
         "http/exposures/apis/openapi.yaml",
         "http/exposures/apis/openapi.yaml",
         "http/exposures/logs/badarg-log.yaml",
-        "http/exposures/logs/ws-ftp-log.yaml"
+        "http/exposures/logs/ws-ftp-log.yaml",
         "http/cves/2002/CVE-2002-1131.yaml",
         "http/cves/2004/CVE-2004-0519.yaml",
         "http/cves/2007/CVE-2007-0885.yaml",
