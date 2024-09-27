@@ -135,15 +135,6 @@ class Nuclei:
 			"dns", "iot", "ssl"
 		]
 
-
-	def createResultDir(self, host):
-		try:
-			os.makedirs(os.path.expanduser(f"{self.outputPath}{host}"))
-		except FileExistsError:
-			if self.verbose:
-				print(f"[PyNuclei] [WARN] Result directory exist {self.outputPath}{host}")
-
-
 	def stringifyTimeDelta(self, tdelta, fmt="{D:02}d {H:02}h {M:02}m {S:02}s", inputType="timedelta"):
 		"""Convert a datetime.timedelta object or a regular number to a custom-
 		formatted string, just like the stftime() method does for datetime.datetime
@@ -265,7 +256,6 @@ class Nuclei:
 
 			time.sleep(0.5)
 
-
 	def _monitorProgress(self):
 		while True:
 			if self.maxProgress == 0:
@@ -283,7 +273,7 @@ class Nuclei:
 				if queuedScans < 0:
 					queuedScans = int()
 
-				if queuedScans + self.running + self.done != self.selectedTemplatesCount:
+				if queuedScans + self.running + self.done != 1:
 					time.sleep(1) 	# Waiting for threads to spawn
 					continue 		# Avoid logs with wrong values
 
@@ -309,26 +299,19 @@ class Nuclei:
 			print(f"[Stdout] [{host}] {output.decode('utf-8', 'ignore')}")
 			print(f"[Stderr] [{host}] {error.decode('utf-8', 'ignore')}")
 
-
-	def _parseNucleiScan(self, host, templates):
+	def _parseNucleiScan(self, templateOutputPath):
 		"""Parse nuclei scan results in json object"""
-		
 		report = list()
-		for template in templates:
-			try:
-				templateOutputPath = f"{self.outputPath}{host}{template}"
-				if ".yaml" in template or ".yml" in template:
-					templateOutputPath = f"{self.outputPath}{host}{template.split('/')[-1].split('/')[0]}"
+		try:
+			with open(templateOutputPath, "r") as scanResult:
+				report = json.load(scanResult)
 
-				with open(templateOutputPath, "r") as scanResult:
-					report.extend(json.load(scanResult))
-
-			except FileNotFoundError:
-				if self.verbose:
-					print(f"[PyNucleiParser] [ERROR] File not found for {templateOutputPath}")
-			
-			except Exception as e:
-				print(f"[PyNucleiParser] [ERROR] : {e}")
+		except FileNotFoundError:
+			if self.verbose:
+				print(f"[PyNucleiParser] [ERROR] File not found for {templateOutputPath}")
+		
+		except Exception as e:
+			print(f"[PyNucleiParser] [ERROR] : {e}")
 
 		return report
 
@@ -464,7 +447,7 @@ class Nuclei:
 		"""
 		Runs the nuclei scan and returns a formatted dictionary with the results.
 		Args:
-			host [str]: The hostname of the target which Nuclei will run against
+			host [str or list]: The hostname of the target which Nuclei will run against
 			templates [list][Optional]: If templates list not provided all nuclei templates from "nucleiTemplates" property will be executed
 			userAgents [str][Optional]: If not provided random User-Agents will be used.
 			rateLimit [int][Optional]: Defaults to 150.
@@ -484,50 +467,48 @@ class Nuclei:
 		if self.stopAfter:
 			print("[PyNuclei] [WARN] Use stopAfter optional parameter only for templates, not for template categories")
 		
-		fileNameValidHost = f"{host.replace('/', FILE_SEPARATOR)}/"
+		if not isinstance(host, list):
+			host = [host]
+
+		currentTime = datetime.datetime.now()
+		timestampString = currentTime.strftime('%Y_%m_%d_%H_%M_%S')
+		hostNamesJoined = ','.join(host)
+
 		if not templates:
 			templates = self.nucleiTemplates
 
-		self.createResultDir(fileNameValidHost)
-
-		commands = list()
 		metricsPort = 9092
 		self.selectedTemplatesCount = len(templates)
 		
-		for template in templates:
-			if not userAgent:
-				userAgent = FakeUserAgent.random
+		if not userAgent:
+			userAgent = FakeUserAgent.random
 
-			templateOutputPath = f"{self.outputPath}{fileNameValidHost}{template}"
-			if ".yaml" in template or ".yml" in template:
-				templateOutputPath = f"{self.outputPath}{fileNameValidHost}{template.split('/')[-1].split('/')[0]}"
+		templateOutputPath = f"{self.outputPath}{timestampString}"
+		formattedTemplates = ','.join([template if ".yaml" in template or ".yml" in template else f"{template}/" for template in templates])
 
-			command = [
-				self.nucleiBinary, '-header', f"'User-Agent: {userAgent}'", 
-				"-rl", str(rateLimit), "-u", host, "-t", template if ".yaml" in template or ".yml" in template else f"{template}/",
-				"--json-export", templateOutputPath, 
-				"-disable-update-check"
-			]
+		command = [
+			self.nucleiBinary, '-header', f"'User-Agent: {userAgent}'", 
+			"-rl", str(rateLimit), "-u", hostNamesJoined, "-t", formattedTemplates,
+			"--json-export", templateOutputPath, 
+			"-disable-update-check"
+		]
 
-			if maxHostError != 30:
-				command.extend(["-max-host-error", str(maxHostError)])
+		if maxHostError != 30:
+			command.extend(["-max-host-error", str(maxHostError)])
 
-			if metrics:
-				command.extend([
-					"-stats", "-metrics-port", str(metricsPort),
-					"-stats-interval", "1" # Update very 1 second
-				])
-				metricsPort += 1
-
-			commands.append(command)
+		if metrics:
+			command.extend([
+				"-stats", "-metrics-port", str(metricsPort),
+				"-stats-interval", "1" # Update very 1 second
+			])
+			metricsPort += 1
 
 		threads = list()
-		for command in commands:
-			threadMetricsPort = command[command.index("-metrics-port") + 1] if metrics else None
-			threadName = f"PyNucleiScanThread-{threadMetricsPort}" if threadMetricsPort else "PyNucleiScanThread"
-			scanThread = Thread(name=threadName, target=self._nucleiThread, args=[host, command, self.verbose])
-			threads.append(scanThread)
-			scanThread.start()
+		threadMetricsPort = command[command.index("-metrics-port") + 1] if metrics else None
+		threadName = f"PyNucleiScanThread-{threadMetricsPort}" if threadMetricsPort else "PyNucleiScanThread"
+		scanThread = Thread(name=threadName, target=self._nucleiThread, args=[host, command, self.verbose])
+		threads.append(scanThread)
+		scanThread.start()
 
 		if metrics:
 			monitorThread = Thread(name="PyNucleiMonitorThread", target=self._monitorProgress)
@@ -539,8 +520,8 @@ class Nuclei:
 		for thread in threads:
 			thread.join()
 
-		report = self._parseNucleiScan(fileNameValidHost, templates)
+		parsedScan = self._parseNucleiScan(templateOutputPath)
+		
+		shutil.rmtree(templateOutputPath, ignore_errors=True)
 
-		shutil.rmtree(f"{self.outputPath}{fileNameValidHost}", ignore_errors=True)
-
-		return self._formatNucleiReport(report)
+		return self._formatNucleiReport(parsedScan)
