@@ -521,8 +521,7 @@ class Nuclei:
 			thread.join()
 
 		parsedScan = self._parseNucleiScan(templateOutputPath)
-		reports = self._formatNucleiReport(parsedScan)
 		
 		shutil.rmtree(templateOutputPath, ignore_errors=True)
 
-		return reports
+		return self._formatNucleiReport(parsedScan)
