@@ -74,33 +74,31 @@ class poc():
 		Args:
 		  scanResult: Scan Output.
 		"""
-		command = f"root@nuclei~scanner#: nuclei -target {scanResult['host']} -t {scanResult['template-id']}\n\n"
+		command = f"root@nuclei~scanner#: nuclei -target {scanResult['host']} -t {scanResult['template-id']}\n"
 		port = scanResult.get("port")
 		host = scanResult.get("host")
 		if port:
 			host = host.split(f":{port}")[0]
 
-		time = datetime.now().strftime(r"%b %d %Y %H:%M:%S %Z")
-		header = str()
+		# time = datetime.now().strftime(r"%b %d %Y %H:%M:%S %Z")
+		# header = str()
 
-		if port:
-			header = f"Host: {host} \t Port: {port}\n"
-		else:
-			header = f"Host: {host}\n"
+		# if port:
+		# 	header = f"Host: {host} \t Port: {port}\n"
+		# else:
+		# 	header = f"Host: {host}\n"
 		
 		# if macAddr:
 		# 	header = f"{header}MAC: {macAddr}\t\t"
 		# if fqdn:
 		# 	header = f"{header}Hostname: {fqdn}\n\n"
 
-		return f"\
-			{header}{time}\n\n \
-			{command} \
-			Issue Name: {scanResult.get('info', {}).get('issue-name')} \
-			Protocol: {scanResult.get('type')} \
-			Response: {scanResult.get('response')} \
-			Matched-At: {scanResult.get('matched-at')} \
-			Extracted-Results: {scanResult.get('extracted-results')} \
+		return f"{command} \
+		Issue Name: {scanResult.get('issue-name')}\n \
+		Protocol: {scanResult.get('type')}\n \
+		Response: {scanResult.get('response')}\n \
+		Matched-At: {scanResult.get('matched-at')}\n \
+		Extracted-Results: {scanResult.get('extracted-results')} \
 		"
 	
 

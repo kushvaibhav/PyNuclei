@@ -341,14 +341,14 @@ class Nuclei:
 		for vuln in report:
 			try:
 				data = {
-					"templateId": vuln["template-id"],
+					"template-id": vuln["template-id"],
 					"host": vuln["host"],
-					"vulnerabilityName": vuln["info"]["name"],
-					"vulnerabilityDetail": str(),
+					"issue-name": vuln["info"]["name"],
+					"issue-detail": str(),
 					"description": str(),
 					"type": vuln["type"],
 					"extracted-results": list(),
-					"vulnerableAt": vuln["matched-at"],
+					"matched-at": vuln["matched-at"],
 					"solution": str(),
 					"curl": str(),
 					"severity": vuln["info"]["severity"],
@@ -406,7 +406,7 @@ class Nuclei:
 					data["curl"] = vuln["curl-command"]
 
 				if "matcher-name" in vuln:
-					data["vulnerabilityDetail"] = vuln["matcher-name"]
+					data["issue-detail"] = vuln["matcher-name"]
 				
 				if "response" in vuln:
 					data["response"] = vuln["response"]
