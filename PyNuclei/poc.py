@@ -2,16 +2,10 @@ from PIL import Image, ImageDraw, ImageOps
 from PIL import ImageFont
 from datetime import datetime
 import os
-from urllib.parse import urlsplit
 from io import BytesIO
 
 
 class poc():
-
-	def __init__(self):
-		self._terminalPrompt = "root@nuclei-scanner: "
-		self.fqdn, self.macAddr = None, None
-
 
 	def generatePoc(self, finding, markPoints=[], colorType=None , pocType=None):
 		"""
@@ -77,31 +71,36 @@ class poc():
 		return buffer
 
 
-	def formatPoc(self, finding, port=""):
-		"""Adds Hostname, Time & Port Number in PoC.
+	def formatTerminalPoc(self, scanResult):
+		"""
+		Adds Hostname, Time & Port Number in PoC.
 
 		Args:
-		  finding String Scan Output.
-		  port String Port Number. (Default value = "")
+		  scanResult: Scan Output.
 		"""
+		command = f"root@nuclei~scanner#: {scanResult['command']}\n"
+		host, port = ""
 
 		time = datetime.now().strftime(r"%b %d %Y %H:%M:%S %Z")
 		header = str()
 
 		if port:
-			header = f"Host: {self.host} \t Port: {port}\n"
+			header = f"Host: {host} \t Port: {port}\n"
 		else:
-			header = f"Host: {self.host}\n"
+			header = f"Host: {host}\n"
 		
-		if self.macAddr:
-			header = f"{header}MAC: {self.macAddr}\t\t"
+		# if macAddr:
+		# 	header = f"{header}MAC: {macAddr}\t\t"
+		# if fqdn:
+		# 	header = f"{header}Hostname: {fqdn}\n\n"
 
-		if self.fqdn:
-			header = f"{header}Hostname: {self.fqdn}\n\n"
+		scanResult = f"\
+			{header}{time}\n\n \
+			{command} \
+			{scanResult}\
+		"
 
-		finding = f"{header}{time}\n\n{finding}"
-
-		return finding
+		return scanResult
 
 
 	def groupSequence(self, markPoints):
@@ -163,10 +162,9 @@ class poc():
 		
 		if scanResult["type"] == "http":
 			self.requestResponsePoc(scanResult, markPoints)
-
-		host, command, port = ""
-
-		scanResult = self.formatPoc(host, command, scanResult, port=str(port))
+		else:
+			scanResult = self.formatTerminalPoc(scanResult)
+		
 		return self.generatePoc(scanResult, markPoints)
 	
 

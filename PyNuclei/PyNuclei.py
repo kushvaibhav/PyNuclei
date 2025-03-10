@@ -1,17 +1,12 @@
-import json
-import yaml
-
-import time
-import datetime
 
 import os
-import shutil
-import string
-import tempfile
 import requests
-import threading
-import subprocess
+import json, yaml, string
+import shutil, tempfile
+import time, datetime
 
+from .poc import poc
+import threading, subprocess
 from threading import Thread
 from fake_useragent import FakeUserAgent
 from distutils.spawn import find_executable
@@ -420,6 +415,8 @@ class Nuclei:
 				if "meta" in vuln:
 					data["vuln-meta"] = vuln["meta"]
 
+				data["poc"] = poc.createPoc(data)
+				
 				formattedReport.append(data)
 			
 			except Exception as e:
