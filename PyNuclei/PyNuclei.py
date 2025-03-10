@@ -5,7 +5,7 @@ import json, yaml, string
 import shutil, tempfile
 import time, datetime
 
-from .poc import poc
+from poc import poc
 import threading, subprocess
 from threading import Thread
 from fake_useragent import FakeUserAgent
@@ -328,7 +328,7 @@ class Nuclei:
 		return report
 
 
-	def _formatNucleiReport(self, report):
+	def _formatNucleiReport(self, report, generatePoc):
 		"""
 		Reformats the raw Nuclei scan results from file into a cleaner list.
 		Args:
@@ -337,6 +337,7 @@ class Nuclei:
 			list: The list of formatted report
 		"""
 		formattedReport = list()
+		pocCount = 1
 		for vuln in report:
 			try:
 				data = {
@@ -357,6 +358,7 @@ class Nuclei:
 					"cvss-score": None,
 					"cve-id": str(),
 					"cwe-id": None,
+					"poc-path": str(),
 					"meta": str()
 				}
 				if "description" in vuln["info"]:
@@ -415,8 +417,10 @@ class Nuclei:
 				if "meta" in vuln:
 					data["vuln-meta"] = vuln["meta"]
 
-				data["poc"] = poc.createPoc(data)
-				
+				if generatePoc:
+					data["poc-path"] = poc.createPoc(f"{vuln['template-id']}-poc-{pocCount}", data)
+					pocCount += 1
+
 				formattedReport.append(data)
 			
 			except Exception as e:
@@ -467,7 +471,7 @@ class Nuclei:
 			process.send_signal(2)  # SIGINT
 
 
-	def scan(self, host, templates=list(), userAgent="", rateLimit=150, verbose=False, metrics=False, maxHostError=30, stopAfter=None):
+	def scan(self, host, templates=list(), generatePoc=False, userAgent="", rateLimit=150, verbose=False, metrics=False, maxHostError=30, stopAfter=None):
 		"""
 		Runs the nuclei scan and returns a formatted dictionary with the results.
 		Args:
@@ -550,4 +554,4 @@ class Nuclei:
 
 		shutil.rmtree(f"{self.outputPath}{fileNameValidHost}", ignore_errors=True)
 
-		return self._formatNucleiReport(report)
+		return self._formatNucleiReport(report, generatePoc)

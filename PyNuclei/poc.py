@@ -7,7 +7,8 @@ from io import BytesIO
 
 class poc():
 
-	def generatePoc(self, finding, markPoints=[], colorType=None , pocType=None):
+	@staticmethod
+	def generatePoc(finding, markPoints=[], colorType=None , pocType=None):
 		"""
 		Generate Image from Scan Output and adds markpoint to the PoC.
 
@@ -55,31 +56,29 @@ class poc():
 				flag = flag + 1
 
 			if len(lineNumber) > 0:
-				lineNumber = self.groupSequence(list(lineNumber))
+				lineNumber = poc.groupSequence(list(lineNumber))
 
 				for lines in lineNumber:
 					markTop = pocMargin + (newLineSpacing+fontSizePx) * (lines[0]) - markGap
 					markBottom = pocMargin + (newLineSpacing+fontSizePx) * (lines[-1]) + fontSizePx + markGap
-					textImg.rectangle(((pocMargin-3, markTop), (imageWidth-10, markBottom)), outline="green")
+					textImg.rectangle(((pocMargin-3, markTop), (imageWidth-10, markBottom)), outline="red")
 
-		if pocType == "REQUEST_RESPONSE":
-			return img
-
-		buffer = BytesIO()
-		img.save(buffer, format="jpeg")
-		
-		return buffer
+		return img
 
 
-	def formatTerminalPoc(self, scanResult):
+	@staticmethod
+	def formatTerminalPoc(scanResult):
 		"""
 		Adds Hostname, Time & Port Number in PoC.
 
 		Args:
 		  scanResult: Scan Output.
 		"""
-		command = f"root@nuclei~scanner#: {scanResult['command']}\n"
-		host, port = ""
+		command = f"root@nuclei~scanner#: nuclei -target {scanResult['host']} -t {scanResult['template-id']}\n\n"
+		port = scanResult.get("port")
+		host = scanResult.get("host")
+		if port:
+			host = host.split(f":{port}")[0]
 
 		time = datetime.now().strftime(r"%b %d %Y %H:%M:%S %Z")
 		header = str()
@@ -94,16 +93,19 @@ class poc():
 		# if fqdn:
 		# 	header = f"{header}Hostname: {fqdn}\n\n"
 
-		scanResult = f"\
+		return f"\
 			{header}{time}\n\n \
 			{command} \
-			{scanResult}\
+			Issue Name: {scanResult.get('info', {}).get('issue-name')} \
+			Protocol: {scanResult.get('type')} \
+			Response: {scanResult.get('response')} \
+			Matched-At: {scanResult.get('matched-at')} \
+			Extracted-Results: {scanResult.get('extracted-results')} \
 		"
+	
 
-		return scanResult
-
-
-	def groupSequence(self, markPoints):
+	@staticmethod
+	def groupSequence(markPoints):
 		"""
 		Combiness the markpoint in PoC,
 		If there is more than 1 continuous line that require marking.
@@ -125,27 +127,39 @@ class poc():
 		return sequence
 
 
-	def getMarkpoints(self, scanResult):
+	@staticmethod
+	def getMarkpoints(scanResult):
 		markPoints = list()
 		
-		if not scanResult["matcher-status"] or scanResult.get("extracted-results") or scanResult.get("vuln-meta"):
-			return markPoints
-		else:
-			if scanResult.get("matcher-name"):
-				markPoints.append(scanResult["matcher-name"])
+		if scanResult.get("matcher-name"):
+			markPoints.append(scanResult["matcher-name"])
 
-			if scanResult.get("extracted-results"):
+		if scanResult.get("extracted-results"):
+			if type(scanResult["extracted-results"]) == list:
+				for value in scanResult["extracted-results"]:
+					markPoints.append(value)
+
+			elif type(scanResult["extracted-results"]) == str:
 				markPoints.append(scanResult["extracted-results"])
 
-			if scanResult.get("vuln-meta"):
+		if scanResult.get("vuln-meta"):
+			if type(scanResult["vuln-meta"]) == dict:
 				for _, value in scanResult["vuln-meta"].items():
 					if value:
 						markPoints.append(value)
 
+			elif type(scanResult["vuln-meta"]) == list:
+				for value in scanResult["vuln-meta"]:
+					markPoints.append(value)
+			
+			elif type(scanResult["vuln-meta"]) == str:
+				markPoints.append(scanResult["vuln-meta"])
+
 		return markPoints
 	
 
-	def createPoc(self, scanResult:dict, markPoints:list=[]):
+	@staticmethod
+	def createPoc(pocPath:str, scanResult:dict, markPoints:list=[]):
 		"""Use this function to generate shell based PoC.
 
 		Args:
@@ -157,18 +171,24 @@ class poc():
 			Example: _poc.createPoc(scanOutput, markPoints=["Vulnerable"], port="443")
 		"""
 
+		pocPath = f"{pocPath}.png"
+
 		if not markPoints:
-			markPoints = self.getMarkpoints(scanResult)
+			markPoints = poc.getMarkpoints(scanResult)
 		
-		if scanResult["type"] == "http":
-			self.requestResponsePoc(scanResult, markPoints)
+		if scanResult["type"] in ["http", "javascript"]:
+			image = poc.requestResponsePoc(scanResult, markPoints)
 		else:
-			scanResult = self.formatTerminalPoc(scanResult)
-		
-		return self.generatePoc(scanResult, markPoints)
+			scanResult = poc.formatTerminalPoc(scanResult)
+			image = poc.generatePoc(scanResult, markPoints)
+
+		image.save(pocPath, "png")
+
+		return pocPath
 	
 
-	def concatImage(self, requestImg, responseImg):
+	@staticmethod
+	def concatImage(requestImg, responseImg):
 		"""
 		Concats Request PoC and Response PoC to generate REQUEST_RESPONSE PoC.
 
@@ -176,8 +196,8 @@ class poc():
 		  requestImg: request PoC image object.
 		  responseImg: response PoC image object.
 
-		Returns: returnImage object
-
+		Returns: 
+		  object: PoC Image
 		"""
 
 		imgWidth = requestImg.width + responseImg.width + 10
@@ -198,7 +218,8 @@ class poc():
 		return img
 
 
-	def parseResponseText(self, responseText, markpoints):
+	@staticmethod
+	def parseResponseText(responseText, markpoints):
 		"""
 		Args:
 		  responseText:
@@ -242,38 +263,50 @@ class poc():
 		return tempStr
 
 
-	def requestResponsePoc(self, scanResult:dict, markPoints:list=[]) -> object:
+	@staticmethod
+	def requestResponsePoc(scanResult:dict, markPoints:list=[]) -> object:
 		"""
 		Use this function to generate burpsuite like Request & Response based PoC.
 
 		Args:
-		  scanResult : nuclei scan result object.
-		  markPoints(optional) : List Keywords to mark in PoC(Keywords are case sensitive). (Default value = [])
+		  scanResult: nuclei scan result object.
+		  markPoints(optional): List Keywords to mark in PoC(Keywords are case sensitive). (Default value = [])
 
 		Returns:
-		  object : PoC image
+		  object: PoC image
 
 		Example: _poc.requestResponsePoc(responseObject, markPoints=["TRACE","DEBUG"])
 		"""
+		header = str()
+		requestBody = scanResult.get("request")
 
-		requestImg = self.generatePoc(
-			scanResult["request"], 
+		port = scanResult.get("port")
+		host = scanResult.get("host").split(f":{port}")[0]
+		if port:
+			header = f"Host: {host} \t Port: {port}\n"
+		else:
+			header = f"Host: {host}\n"
+
+		pocType = "REQUEST_RESPONSE"
+		if scanResult["type"] != "http":
+			pocType = "CODE_EXECUTION"
+			requestBody = f"{header}\n{requestBody}"
+
+		requestImg = poc.generatePoc(
+			requestBody, 
 			markPoints=markPoints, 
 			colorType="white", 
-			pocType="REQUEST_RESPONSE"
+			pocType=pocType
 		)
 
-		responseImg = self.generatePoc(
-			self.parseResponseText(scanResult["response"], markPoints), 
+		responseImg = poc.generatePoc(
+			poc.parseResponseText(scanResult.get("response"), markPoints), 
 			markPoints=markPoints, 
 			colorType="white", 
-			pocType="REQUEST_RESPONSE"
+			pocType=pocType
 		)
 
-		mergedImg = self.concatImage(requestImg, responseImg)
+		mergedImg = poc.concatImage(requestImg, responseImg)
 		ImageOps.expand(mergedImg, border=1, fill="black")
 
-		buffer = BytesIO()
-		mergedImg.save(buffer, format="jpeg")
-
-		return buffer
+		return mergedImg

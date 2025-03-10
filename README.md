@@ -29,6 +29,7 @@ nucleiScanner.scan()
 Args:
     host [str]: The hostname of the target which Nuclei will run against
     templates [list][Optional]: If the templates list is not provided all nuclei templates from the "nucleiTemplates" property will be executed
+    generatePoc [str]: Generate Burpsuite like Request-Response or Terminal screenshot.
     userAgents [str][Optional]: If not provided random User-Agents will be used.
     rateLimit [int][Optional]: Defaults to 150.
     maxHostError [int][Optional]: It determines to skip host for scanning after n number of connection failures
