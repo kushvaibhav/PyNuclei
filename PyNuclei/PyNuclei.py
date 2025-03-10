@@ -66,7 +66,7 @@ class Nuclei:
 
 	@staticmethod
 	def checkFirstRun(nucleiPath):
-		with open(f"{os.path.dirname(__file__)}/.config", "r+") as pyNucleiConfig:
+		with open(f"{os.path.dirname(__file__)}/static/.config", "r+") as pyNucleiConfig:
 			configDetails = json.loads(pyNucleiConfig.read())
 			if configDetails["FIRST_RUN"]:
 				print("[PyNuclei] [INFO] Configuring PyNuclei for First Run...")
@@ -351,7 +351,7 @@ class Nuclei:
 					"vulnerabilityDetail": str(),
 					"description": str(),
 					"type": vuln["type"],
-					"result": list(),
+					"extracted-results": list(),
 					"vulnerableAt": vuln["matched-at"],
 					"solution": str(),
 					"curl": str(),
@@ -361,7 +361,8 @@ class Nuclei:
 					"cvss-metrics": str(),
 					"cvss-score": None,
 					"cve-id": str(),
-					"cwe-id": None
+					"cwe-id": None,
+					"meta": str()
 				}
 				if "description" in vuln["info"]:
 					data["description"] = vuln["info"]["description"]
@@ -402,13 +403,22 @@ class Nuclei:
 								data["cwe-id"] = int(cwe.split("-")[-1]) if cwe.split("-")[-1].isnumeric() else int()
 					
 				if "extracted-results" in vuln:
-					data["result"] = vuln["extracted-results"]
+					data["extracted-results"] = vuln["extracted-results"]
 
 				if "curl-command" in vuln:
 					data["curl"] = vuln["curl-command"]
 
 				if "matcher-name" in vuln:
 					data["vulnerabilityDetail"] = vuln["matcher-name"]
+				
+				if "response" in vuln:
+					data["response"] = vuln["response"]
+
+				if "request" in vuln:
+					data["request"] = vuln["request"]
+						
+				if "meta" in vuln:
+					data["vuln-meta"] = vuln["meta"]
 
 				formattedReport.append(data)
 			
