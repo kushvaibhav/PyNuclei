@@ -17,7 +17,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    package_data={"": [".config"]},
+    package_data={"": ["static/.config", "static/font.ttf"]},
     packages=setuptools.find_packages(exclude=['static', 'static.*']),
     include_package_data=True,
     python_requires=">=3.8",
