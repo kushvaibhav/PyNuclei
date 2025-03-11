@@ -241,11 +241,12 @@ class poc():
 		Returns: PoC String
 		"""
 		if responseText:
-			lineNumber1 = list(range(-25, 25))
-			lineNumber = list(range(0, 25))
-
-			# responseText = ">\n<".join(responseText.split("><"))
 			responseList = responseText.split("\n")
+			# responseText = ">\n<".join(responseText.split("><"))
+			
+			maxLines = len(responseList) if len(responseList) <= 25 else 25
+			lineNumber1 = list(range(-25, maxLines))
+			lineNumber = list(range(0, maxLines))
 
 			num = 0
 			line = 0
