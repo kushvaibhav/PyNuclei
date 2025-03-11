@@ -1,17 +1,12 @@
-import json
-import yaml
-
-import time
-import datetime
 
 import os
-import shutil
-import string
-import tempfile
 import requests
-import threading
-import subprocess
+import json, yaml, string
+import shutil, tempfile
+import time, datetime
 
+from .poc import poc
+import threading, subprocess
 from threading import Thread
 from fake_useragent import FakeUserAgent
 from distutils.spawn import find_executable
@@ -66,7 +61,7 @@ class Nuclei:
 
 	@staticmethod
 	def checkFirstRun(nucleiPath):
-		with open(f"{os.path.dirname(__file__)}/.config", "r+") as pyNucleiConfig:
+		with open(f"{os.path.dirname(__file__)}/static/.config", "r+") as pyNucleiConfig:
 			configDetails = json.loads(pyNucleiConfig.read())
 			if configDetails["FIRST_RUN"]:
 				print("[PyNuclei] [INFO] Configuring PyNuclei for First Run...")
@@ -136,9 +131,9 @@ class Nuclei:
 		]
 
 
-	def createResultDir(self, host):
+	def createResultDir(self, path):
 		try:
-			os.makedirs(os.path.expanduser(f"{self.outputPath}{host}"))
+			os.makedirs(os.path.expanduser(path))
 		except FileExistsError:
 			if self.verbose:
 				print(f"[PyNuclei] [WARN] Result directory exist {self.outputPath}{host}")
@@ -333,7 +328,7 @@ class Nuclei:
 		return report
 
 
-	def _formatNucleiReport(self, report):
+	def _formatNucleiReport(self, report, generatePoc, pocPath):
 		"""
 		Reformats the raw Nuclei scan results from file into a cleaner list.
 		Args:
@@ -342,26 +337,32 @@ class Nuclei:
 			list: The list of formatted report
 		"""
 		formattedReport = list()
+		pocCount = 1
 		for vuln in report:
 			try:
 				data = {
-					"templateId": vuln["template-id"],
-					"host": vuln["host"],
-					"vulnerabilityName": vuln["info"]["name"],
-					"vulnerabilityDetail": str(),
+					"template-id": vuln["template-id"],
+					"host": vuln.get("host"),
+					"port": vuln.get("port"),
+					"issue-name": vuln["info"]["name"],
+					"issue-detail": vuln.get("matcher-name"),
 					"description": str(),
 					"type": vuln["type"],
-					"result": list(),
-					"vulnerableAt": vuln["matched-at"],
+					"extracted-results": vuln.get("extracted-results"),
+					"matched-at": vuln.get("matched-at"),
 					"solution": str(),
-					"curl": str(),
+					"curl": vuln.get("curl-command"),
 					"severity": vuln["info"]["severity"],
 					"tags": vuln["info"]["tags"],
 					"reference": str(),
 					"cvss-metrics": str(),
 					"cvss-score": None,
 					"cve-id": str(),
-					"cwe-id": None
+					"cwe-id": None,
+					"poc-path": str(),
+					"vuln-meta": vuln.get("meta"),
+					"response": vuln.get("response"),
+					"request": vuln.get("request"),
 				}
 				if "description" in vuln["info"]:
 					data["description"] = vuln["info"]["description"]
@@ -401,14 +402,9 @@ class Nuclei:
 							if "cwe-" in cwe.lower():
 								data["cwe-id"] = int(cwe.split("-")[-1]) if cwe.split("-")[-1].isnumeric() else int()
 					
-				if "extracted-results" in vuln:
-					data["result"] = vuln["extracted-results"]
-
-				if "curl-command" in vuln:
-					data["curl"] = vuln["curl-command"]
-
-				if "matcher-name" in vuln:
-					data["vulnerabilityDetail"] = vuln["matcher-name"]
+				if generatePoc:
+					data["poc-path"] = poc.createPoc(f"{pocPath}/{vuln['template-id']}-poc-{pocCount}", data)
+					pocCount += 1
 
 				formattedReport.append(data)
 			
@@ -460,7 +456,7 @@ class Nuclei:
 			process.send_signal(2)  # SIGINT
 
 
-	def scan(self, host, templates=list(), userAgent="", rateLimit=150, verbose=False, metrics=False, maxHostError=30, stopAfter=None):
+	def scan(self, host, templates=list(), generatePoc=False, userAgent="", rateLimit=150, verbose=False, metrics=False, maxHostError=30, stopAfter=None):
 		"""
 		Runs the nuclei scan and returns a formatted dictionary with the results.
 		Args:
@@ -488,7 +484,10 @@ class Nuclei:
 		if not templates:
 			templates = self.nucleiTemplates
 
-		self.createResultDir(fileNameValidHost)
+		self.createResultDir(f"{self.outputPath}{fileNameValidHost}")
+		if generatePoc:
+			pocPath = f"{os.getcwd()}/poc/{fileNameValidHost}"
+			self.createResultDir(pocPath)
 
 		commands = list()
 		metricsPort = 9092
@@ -543,4 +542,4 @@ class Nuclei:
 
 		shutil.rmtree(f"{self.outputPath}{fileNameValidHost}", ignore_errors=True)
 
-		return self._formatNucleiReport(report)
+		return self._formatNucleiReport(report, generatePoc, pocPath)

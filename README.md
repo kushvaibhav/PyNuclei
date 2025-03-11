@@ -29,6 +29,7 @@ nucleiScanner.scan()
 Args:
     host [str]: The hostname of the target which Nuclei will run against
     templates [list][Optional]: If the templates list is not provided all nuclei templates from the "nucleiTemplates" property will be executed
+    generatePoc [str]: Generate Burpsuite like Request-Response or Terminal screenshot.
     userAgents [str][Optional]: If not provided random User-Agents will be used.
     rateLimit [int][Optional]: Defaults to 150.
     maxHostError [int][Optional]: It determines to skip host for scanning after n number of connection failures
@@ -45,6 +46,7 @@ nucleiScanner = Nuclei(nucleiPath)
 scanResult = nucleiScanner.scan(
     "example.com",
     templates=["cves", "network", "ssl"],
+    generatePoc=True,
     rateLimit=150, 
     verbose=False,
     metrics=False,
@@ -86,6 +88,18 @@ Returns details of all nuclei templates in JSON format
 print(nucleiScanner.returnTemplatesDetails())
 ```
 NOTE: You can run ignored templates by passing them in the template parameter in ```nucleiScanner.scan(<host>, template=nucleiScanner.ignoredTemplates)```
+
+## Image PoC
+
+PyNuclei extends its core capabilities with a powerful feature for generating visual Proof-of-Concepts (PoCs). This functionality allows users to create image-based representations of identified vulnerabilities, significantly enhancing reporting and communication. <br/>
+You can generate Terminal based PoCs, BurpSuite like request/response PoCs, visually displaying the HTTP interactions that demonstrate the vulnerability, and even code execution POCs, showing the resulting output of arbitrary code run. <br/>
+Furthermore, PyNuclei automates the process of highlighting critical vulnerability details within the generated PoC images, making it instantly clear where the identified issues lie.
+
+### Request-Response/Code-Execution PoC
+![Request-Response/Code-Execution PoC](static/code_poc.png)
+
+### Terminal PoC
+![Terminal PoC](static/terminal_poc.png)
 
 ### Update Nuclei
 ```python
