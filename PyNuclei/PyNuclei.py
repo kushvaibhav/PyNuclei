@@ -5,7 +5,7 @@ import json, yaml, string
 import shutil, tempfile
 import time, datetime
 
-from poc import poc
+from .poc import poc
 import threading, subprocess
 from threading import Thread
 from fake_useragent import FakeUserAgent
