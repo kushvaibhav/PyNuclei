@@ -1,8 +1,7 @@
+import os
+import textwrap
 from PIL import Image, ImageDraw, ImageOps
 from PIL import ImageFont
-from datetime import datetime
-import os
-from io import BytesIO
 
 
 class poc():
@@ -93,13 +92,7 @@ class poc():
 		# if fqdn:
 		# 	header = f"{header}Hostname: {fqdn}\n\n"
 
-		return f"{command} \
-		Issue Name: {scanResult.get('issue-name')}\n \
-		Protocol: {scanResult.get('type')}\n \
-		Response: {scanResult.get('response')}\n \
-		Matched-At: {scanResult.get('matched-at')}\n \
-		Extracted-Results: {scanResult.get('extracted-results')} \
-		"
+		return f"{command}\nIssue Name: {scanResult.get('issue-name')}\nProtocol: {scanResult.get('type')}\nResponse: {scanResult.get('response')}\nMatched-At: {scanResult.get('matched-at')}\nExtracted-Results: {scanResult.get('extracted-results')}"
 	
 
 	@staticmethod
@@ -124,6 +117,28 @@ class poc():
 
 		return sequence
 
+
+	@staticmethod
+	def wordWrapCode(codeString, width=100):
+		"""
+		Wraps a long code string into multiple lines with a specified width.
+
+		Args:
+			code_string (str): The long code string to wrap.
+			width (int): The maximum width of each line (default: 80).
+
+		Returns:
+			str: The wrapped code string.
+		"""
+
+		wrappedLines = []
+		lines = codeString.splitlines()  # Split into individual lines
+
+		for line in lines:
+			wrappedLines.extend(textwrap.wrap(line, width=width)) # wrap each line
+
+		return "\n".join(wrappedLines)
+	
 
 	@staticmethod
 	def getMarkpoints(scanResult):
@@ -178,7 +193,7 @@ class poc():
 			image = poc.requestResponsePoc(scanResult, markPoints)
 		else:
 			scanResult = poc.formatTerminalPoc(scanResult)
-			image = poc.generatePoc(scanResult, markPoints)
+			image = poc.generatePoc(poc.wordWrapCode(scanResult), markPoints)
 
 		image.save(pocPath, "png")
 
@@ -227,9 +242,9 @@ class poc():
 		"""
 		if responseText:
 			lineNumber1 = list(range(-5, 6))
-			lineNumber = list(range(0, 11))
+			lineNumber = list(range(0, 25))
 
-			responseText = ">\n<".join(responseText.split("><"))
+			# responseText = ">\n<".join(responseText.split("><"))
 			responseList = responseText.split("\n")
 
 			num = 0
@@ -281,7 +296,7 @@ class poc():
 		port = scanResult.get("port")
 		host = scanResult.get("host").split(f":{port}")[0]
 		if port:
-			header = f"Host: {host} \t Port: {port}\n"
+			header = f"Host: {host}\nPort: {port}\n"
 		else:
 			header = f"Host: {host}\n"
 
@@ -291,14 +306,14 @@ class poc():
 			requestBody = f"{header}\n{requestBody}"
 
 		requestImg = poc.generatePoc(
-			requestBody, 
+			poc.wordWrapCode(requestBody), 
 			markPoints=markPoints, 
 			colorType="white", 
 			pocType=pocType
 		)
 
 		responseImg = poc.generatePoc(
-			poc.parseResponseText(scanResult.get("response"), markPoints), 
+			poc.parseResponseText(poc.wordWrapCode(scanResult.get("response")), markPoints), 
 			markPoints=markPoints, 
 			colorType="white", 
 			pocType=pocType
