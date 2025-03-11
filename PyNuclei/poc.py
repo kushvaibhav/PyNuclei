@@ -241,7 +241,7 @@ class poc():
 		Returns: PoC String
 		"""
 		if responseText:
-			lineNumber1 = list(range(-5, 6))
+			lineNumber1 = list(range(-25, 25))
 			lineNumber = list(range(0, 25))
 
 			# responseText = ">\n<".join(responseText.split("><"))
