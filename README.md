@@ -95,7 +95,10 @@ PyNuclei extends its core capabilities with a powerful feature for generating vi
 You can generate Terminal based PoCs, BurpSuite like request/response PoCs, visually displaying the HTTP interactions that demonstrate the vulnerability, and even code execution POCs, showing the resulting output of arbitrary code run. <br/>
 Furthermore, PyNuclei automates the process of highlighting critical vulnerability details within the generated PoC images, making it instantly clear where the identified issues lie.
 
-### Request-Response/Code-Execution PoC
+### Request-Response PoC
+![Request-Response/Code-Execution PoC](https://raw.githubusercontent.com/kushvaibhav/PyNuclei/master/static/request_response.png)
+
+### Code-Execution PoC
 ![Request-Response/Code-Execution PoC](https://raw.githubusercontent.com/kushvaibhav/PyNuclei/master/static/code_poc.png)
 
 ### Terminal PoC
