@@ -96,10 +96,10 @@ You can generate Terminal based PoCs, BurpSuite like request/response PoCs, visu
 Furthermore, PyNuclei automates the process of highlighting critical vulnerability details within the generated PoC images, making it instantly clear where the identified issues lie.
 
 ### Request-Response/Code-Execution PoC
-![Request-Response/Code-Execution PoC](static/code_poc.png)
+![Request-Response/Code-Execution PoC](https://raw.githubusercontent.com/kushvaibhav/PyNuclei/master/static/code_poc.png)
 
 ### Terminal PoC
-![Terminal PoC](static/terminal_poc.png)
+![Terminal PoC](https://raw.githubusercontent.com/kushvaibhav/PyNuclei/master/static/terminal_poc.png)
 
 ### Update Nuclei
 ```python
