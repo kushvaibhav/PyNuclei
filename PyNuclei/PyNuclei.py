@@ -485,8 +485,9 @@ class Nuclei:
 			templates = self.nucleiTemplates
 
 		self.createResultDir(f"{self.outputPath}{fileNameValidHost}")
+		
+		pocPath = f"{os.getcwd()}/poc/{fileNameValidHost}"
 		if generatePoc:
-			pocPath = f"{os.getcwd()}/poc/{fileNameValidHost}"
 			self.createResultDir(pocPath)
 
 		commands = list()

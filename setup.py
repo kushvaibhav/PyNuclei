@@ -21,5 +21,5 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=['static', 'static.*']),
     include_package_data=True,
     python_requires=">=3.8",
-    install_requires=["PyYAML", "requests", "fake_useragent"],
+    install_requires=["PyYAML", "requests", "fake_useragent", "Pillow<=9.5.0"],
 )
