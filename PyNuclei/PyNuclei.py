@@ -443,7 +443,42 @@ class Nuclei:
 			process.send_signal(2)  # SIGINT
 
 
-	def scan(self, host, templates=list(), userAgent="", rateLimit=150, verbose=False, metrics=False, maxHostError=30, stopAfter=None):
+	def _build_nuclei_args(self, **kwargs):
+		"""
+		Convert keyword arguments to nuclei command line arguments.
+		
+		Args:
+			**kwargs: Dynamic nuclei parameters
+			
+		Returns:
+			list: Command line arguments for nuclei
+		"""
+		args = []
+		
+		for key, value in kwargs.items():
+			# Convert underscores to hyphens for nuclei parameter names
+			param_name = key.replace('_', '-')
+			
+			# Single character parameters use single dash, multi-character use double dash
+			if len(param_name) == 1:
+				flag = f"-{param_name}"
+			else:
+				flag = f"--{param_name}"
+			
+			# Handle boolean values
+			if isinstance(value, bool):
+				if value:  # Only add flag if True
+					args.append(flag)
+			# Handle list values (join with comma)
+			elif isinstance(value, list):
+				args.extend([flag, ','.join(map(str, value))])
+			# Handle other values
+			else:
+				args.extend([flag, str(value)])
+		
+		return args
+
+	def scan(self, host, templates=list(), userAgent="", rateLimit=150, verbose=False, metrics=False, maxHostError=30, stopAfter=None, **kwargs):
 		"""
 		Runs the nuclei scan and returns a formatted dictionary with the results.
 		Args:
@@ -502,6 +537,8 @@ class Nuclei:
 				"-stats-interval", "1" # Update very 1 second
 			])
 			metricsPort += 1
+
+		command.extend(self._build_nuclei_args(**kwargs))
 
 		threads = list()
 		threadMetricsPort = command[command.index("-metrics-port") + 1] if metrics else None
